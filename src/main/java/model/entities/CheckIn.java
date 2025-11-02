@@ -1,24 +1,20 @@
 package model.entities;
 
+import java.time.LocalDateTime;
+
 public class CheckIn {
     private LocalDateTime fechaHora;
-    private Empleado empleadoResponsable;
+    private Empleado empleado;
     private Reserva reserva;
 
-
-    public CheckIn() {}
-
-
-    public CheckIn(LocalDateTime fechaHora, Empleado empleado, Reserva reserva) {
-        this.fechaHora = fechaHora;
-        this.empleadoResponsable = empleado;
+    public CheckIn(Empleado empleado, Reserva reserva) {
+        this.fechaHora = LocalDateTime.now();
+        this.empleado = empleado;
         this.reserva = reserva;
+        reserva.confirmar();
     }
-
 
     public LocalDateTime getFechaHora() { return fechaHora; }
     public Empleado getEmpleado() { return empleado; }
     public Reserva getReserva() { return reserva; }
-
-    public void registrarCheckIn();
 }

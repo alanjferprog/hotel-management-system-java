@@ -3,33 +3,30 @@ package model.entities;
 
 public class Habitacion {
     private int numero;
-    private String tipo; // e.g., Single, Double
+    private String tipo;
     private double precioPorNoche;
-    private boolean disponible = true;
-
-
-    public Habitacion() {}
-
+    private String estado;
 
     public Habitacion(int numero, String tipo, double precioPorNoche) {
         this.numero = numero;
         this.tipo = tipo;
         this.precioPorNoche = precioPorNoche;
+        this.estado = "disponible";
     }
 
-
     public int getNumero() { return numero; }
-    public void setNumero(int numero) { this.numero = numero; }
     public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
     public double getPrecioPorNoche() { return precioPorNoche; }
-    public void setPrecioPorNoche(double precioPorNoche) { this.precioPorNoche = precioPorNoche; }
-    public boolean esDisponible(Date fechaInicio, Date fechaFin) { return disponible; }
-    public void actualizarEstado(boolean disponible) { this.disponible = disponible; }
+    public String getEstado() { return estado; }
 
+    public void setEstado(String estado) { this.estado = estado; }
+
+    public boolean estaDisponible() {
+        return "disponible".equalsIgnoreCase(estado);
+    }
 
     @Override
     public String toString() {
-        return "Hab " + numero + " (" + tipo + ") - " + (disponible?"Disponible":"Ocupada");
+        return "Hab " + numero + " - " + tipo + " - $" + precioPorNoche + " - " + estado;
     }
 }

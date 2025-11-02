@@ -1,54 +1,49 @@
 package model.entities;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Reserva {
+    private static final AtomicInteger COUNTER = new AtomicInteger(1);
     private int idReserva;
-    private Huesped huesped;
-    private Habitacion habitacion;
     private LocalDate fechaInicio;
     private LocalDate fechaFin;
+    private Habitacion habitacion;
+    private Huesped huesped;
+    private Empleado empleadoResponsable;
     private String estado;
 
-
-    public Reserva() {}
-
-
-    public Reserva(int idReserva, Huesped huesped, Habitacion habitacion, LocalDate fechaInicio, LocalDate fechaFin) {
-        this.idReserva = idReserva;
-        this.huesped = huesped;
-        this.habitacion = habitacion;
+    public Reserva(LocalDate fechaInicio, LocalDate fechaFin, Habitacion habitacion, Huesped huesped, Empleado empleadoResponsable) {
+        this.idReserva = COUNTER.getAndIncrement();
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
+        this.habitacion = habitacion;
+        this.huesped = huesped;
+        this.empleadoResponsable = empleadoResponsable;
+        this.estado = "pendiente";
     }
-
 
     public int getIdReserva() { return idReserva; }
-    public void setIdReserva(int idReserva) { this.idReserva = idReserva; }
-    public Huesped getHuesped() { return huesped; }
-    public void setHuesped(Huesped huesped) { this.huesped = huesped; }
-    public Habitacion getHabitacion() { return habitacion; }
-    public void setHabitacion(Habitacion habitacion) { this.habitacion = habitacion; }
     public LocalDate getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
     public LocalDate getFechaFin() { return fechaFin; }
-    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
-    public double getCostoTotal() { return costoTotal; }
+    public Habitacion getHabitacion() { return habitacion; }
+    public Huesped getHuesped() { return huesped; }
+    public Empleado getEmpleadoResponsable() { return empleadoResponsable; }
+    public String getEstado() { return estado; }
 
+    public void confirmar() { this.estado = "confirmada"; habitacion.setEstado("ocupada"); }
+    public void cancelar() { this.estado = "cancelada"; habitacion.setEstado("disponible"); }
 
-    public void confirmar();
-    public void cancelar();
-
-
-    public void calcularImporteTotal() {
-        if (habitacion != null && fechaInicio != null && fechaFin != null) {
-            costoTotal = noches() * habitacion.getPrecioPorNoche();
-        } else {
-            costoTotal = 0;
-        }
+    public long calcularImporteTotal() {
+        long noches = ChronoUnit.DAYS.between(fechaInicio, fechaFin);
+        if (noches <= 0) noches = 1;
+        return Math.round(noches * habitacion.getPrecioPorNoche());
     }
-
 
     @Override
     public String toString() {
-        return "Reserva #" + idReserva + " - " + huesped + " - " + habitacion + " (" + fechaInicio + " -> " + fechaFin + ")";
+        return "Reserva #" + idReserva + " - " + huesped + " / Hab: " + habitacion.getNumero()
+                + " - " + fechaInicio + " a " + fechaFin + " (" + estado + ")";
     }
 }
