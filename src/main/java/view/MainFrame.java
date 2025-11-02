@@ -78,6 +78,17 @@ public class MainFrame extends JFrame {
         contentPanel.add(checkinout, "CHECK");
         add(contentPanel, BorderLayout.CENTER);
 
+        // Conectar acción de volver desde VerHabitacionesPanel
+        verPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
+        // Conectar acción de reservar desde VerHabitacionesPanel: mostrar formulario y prefill numero
+        verPanel.setOnReservar(numero -> {
+            reservarPanel.setNumeroHabitacion(numero);
+            cardLayout.show(contentPanel, "RESERVAR");
+        });
+
+        // Botón Volver dentro del ReservarPanel vuelve a INICIO (ajustable)
+        reservarPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
+
         // Listeners
         btnVerHabitaciones.addActionListener(e -> {
             cardLayout.show(contentPanel, "VER");

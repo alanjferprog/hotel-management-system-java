@@ -13,6 +13,9 @@ public class ReservarPanel extends JPanel {
     private JTextField tfNombre, tfApellido, tfDni, tfEmail, tfTelefono, tfNumeroHab;
     private JTextField tfFechaInicio, tfFechaFin;
     private JTextArea taOutput;
+    private JButton btnReservar;
+    private JButton btnVolver;
+    private Runnable onBackCallback;
 
     public ReservarPanel(ControladorGUI controlador) {
         this.controlador = controlador;
@@ -37,15 +40,40 @@ public class ReservarPanel extends JPanel {
         form.add(new JLabel("Fecha Inicio:")); form.add(tfFechaInicio);
         form.add(new JLabel("Fecha Fin:")); form.add(tfFechaFin);
 
-        JButton btnReservar = new JButton("Crear Reserva");
+        btnReservar = new JButton("Crear Reserva");
         btnReservar.addActionListener(this::onReservar);
+
+        // Botón Volver local
+        btnVolver = new JButton("Volver");
+        btnVolver.addActionListener(e -> {
+            if (onBackCallback != null) onBackCallback.run();
+        });
 
         taOutput = new JTextArea(8,40);
         taOutput.setEditable(false);
 
         add(form, BorderLayout.NORTH);
-        add(btnReservar, BorderLayout.CENTER);
-        add(new JScrollPane(taOutput), BorderLayout.SOUTH);
+        add(new JScrollPane(taOutput), BorderLayout.CENTER);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        bottom.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
+        bottom.add(btnReservar);
+        bottom.add(Box.createHorizontalStrut(12));
+        bottom.add(btnVolver);
+        add(bottom, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Prefill número de habitación (utilizado cuando se reserva desde la tabla).
+     */
+    public void setNumeroHabitacion(int numero) {
+        tfNumeroHab.setText(String.valueOf(numero));
+        tfFechaInicio.requestFocusInWindow();
+    }
+
+    /** Permite asignar acción al botón Volver dentro del panel. */
+    public void setOnBack(Runnable onBack) {
+        this.onBackCallback = onBack;
     }
 
     private void onReservar(ActionEvent ev) {

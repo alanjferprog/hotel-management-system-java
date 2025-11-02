@@ -5,6 +5,7 @@ import model.entities.*;
 import model.exceptions.*;
 
 import java.time.LocalDate;
+import java.io.IOException;
 
 public class ControladorGUI {
     private Hotel hotel;
@@ -22,6 +23,14 @@ public class ControladorGUI {
 
     public void confirmarReserva(int idReserva) throws ReservaInvalidaException {
         hotel.confirmarReserva(idReserva);
+    }
+
+    /**
+     * Carga las habitaciones desde un CSV relativo a la raiz del proyecto.
+     * Retorna la cantidad de habitaciones cargadas o lanza IOException si falla la lectura.
+     */
+    public int cargarHabitacionesDesdeCSV(String rutaRelativa) throws IOException {
+        return hotel.cargarHabitacionesDesdeCSV(rutaRelativa);
     }
 
     //public void cancelarReserva(int idReserva) throws ReservaInvalidaException {
