@@ -31,6 +31,14 @@ public class Main {
                 hotel.agregarHabitacion(new Habitacion(202, "Suite Deluxe", 220.0));
             }
 
+            // Intentar cargar un CSV de reservas (opcional)
+            try {
+                int rc = controlador.cargarReservasDesdeCSV("data/reservas.csv");
+                System.out.println("Reservas cargadas desde CSV: " + rc);
+            } catch (IOException e) {
+                // no es crítico
+            }
+
             MainFrame frame = new MainFrame(controlador);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);

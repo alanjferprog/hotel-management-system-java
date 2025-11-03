@@ -6,6 +6,7 @@ import model.exceptions.*;
 
 import java.time.LocalDate;
 import java.io.IOException;
+import java.util.Optional;
 
 public class ControladorGUI {
     private Hotel hotel;
@@ -31,6 +32,19 @@ public class ControladorGUI {
      */
     public int cargarHabitacionesDesdeCSV(String rutaRelativa) throws IOException {
         return hotel.cargarHabitacionesDesdeCSV(rutaRelativa);
+    }
+
+    /** Busca una reserva por su id en memoria. */
+    public Optional<Reserva> buscarReservaPorId(int id) {
+        return hotel.getReservas().stream().filter(r -> r.getIdReserva() == id).findFirst();
+    }
+
+    /**
+     * Carga reservas desde un CSV simple. Devuelve la cantidad de reservas añadidas.
+     * Formato esperado por línea (csv): fechaInicio,fechaFin,numeroHab,nombre,apellido,dni,email,telefono
+     */
+    public int cargarReservasDesdeCSV(String rutaRelativa) throws IOException {
+        return hotel.cargarReservasDesdeCSV(rutaRelativa);
     }
 
     //public void cancelarReserva(int idReserva) throws ReservaInvalidaException {

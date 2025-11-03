@@ -1,0 +1,7 @@
+# Formato: fechaInicio,fechaFin,numeroHab,nombre,apellido,dni,email,telefono
+# Fechas: yyyy-mm-dd
+
+2025-12-01,2025-12-05,101,Juan,Perez,12345678,juan@example.com,555-1234
+2025-11-10,2025-11-12,103,Maria,Gonzalez,87654321,maria@example.com,555-9876
+2025-12-20,2025-12-22,201,Pedro,Lopez,11223344,pedro@example.com,555-3344
+

@@ -109,4 +109,100 @@ public class Hotel {
         }
         return cargadas;
     }
+
+    /**
+     * Carga reservas desde CSV. Formato por línea:
+     * fechaInicio,fechaFin,numeroHab,nombre,apellido,dni,email,telefono
+     * Las fechas deben ser yyyy-mm-dd.
+     * Devuelve la cantidad de reservas añadidas correctamente.
+     */
+    public int cargarReservasDesdeCSV(String rutaRelativa) throws IOException {
+        Path ruta = Paths.get(rutaRelativa);
+        if (!Files.exists(ruta)) {
+            throw new IOException("Archivo no encontrado: " + ruta.toAbsolutePath());
+        }
+        List<String> lineas = Files.readAllLines(ruta, StandardCharsets.UTF_8);
+        int cargadas = 0;
+        int lineaNum = 0;
+        for (String linea : lineas) {
+            lineaNum++;
+            if (linea == null) continue;
+            String l = linea.trim();
+            if (l.isEmpty() || l.startsWith("#")) continue;
+            String[] parts = l.split(",");
+            // aceptar dos formatos: con id inicial (9 campos) o sin id (8 campos)
+            if (parts.length < 8) continue;
+            try {
+                int idx = 0;
+                Integer idOpt = null;
+                // si hay 9 o más campos y el primero parece un entero, tratarlo como id
+                if (parts.length >= 9) {
+                    try {
+                        idOpt = Integer.parseInt(parts[0].trim());
+                        idx = 1; // desplazamos los índices
+                    } catch (NumberFormatException nfe) {
+                        idOpt = null;
+                        idx = 0;
+                    }
+                }
+
+                LocalDate inicio = LocalDate.parse(parts[idx + 0].trim());
+                LocalDate fin = LocalDate.parse(parts[idx + 1].trim());
+                int numeroHab = Integer.parseInt(parts[idx + 2].trim());
+                String nombre = parts[idx + 3].trim();
+                String apellido = parts[idx + 4].trim();
+                String dni = parts[idx + 5].trim();
+                String email = parts[idx + 6].trim();
+                String telefono = parts[idx + 7].trim();
+
+                // Crear huesped y empleado por defecto si no hay
+                Huesped h = new Huesped(nombre, apellido, dni, email, telefono);
+                Empleado e = empleados.isEmpty() ? new Empleado(1, "Admin", "Admin", "00000000", "Reception") : empleados.get(0);
+
+                // buscar habitación (debe existir)
+                Optional<Habitacion> habOpt = buscarHabitacionPorNumero(numeroHab);
+                if (!habOpt.isPresent()) continue; // ignorar si la habitación no existe
+                Habitacion hab = habOpt.get();
+
+                // debug print
+                System.out.println("[DEBUG] Procesando linea " + lineaNum + ": idOpt=" + idOpt + " hab=" + numeroHab);
+
+                // Si ya existe una reserva con idOpt, ignorar para evitar duplicados
+                if (idOpt != null) {
+                    int idVal = idOpt;
+                    boolean existe = reservas.stream().anyMatch(r -> r.getIdReserva() == idVal);
+                    if (existe) {
+                        System.out.println("[DEBUG] Ya existe reserva con id " + idVal + ", se ignora");
+                        continue;
+                    }
+                    // crear reserva con id explícito usando constructor alternativo
+                    try {
+                        Reserva r = new Reserva(idVal, inicio, fin, hab, h, e);
+                        reservas.add(r);
+                        h.addReserva(r);
+                        cargadas++;
+                        System.out.println("[DEBUG] Añadida reserva id=" + r.getIdReserva());
+                    } catch (Exception ex) {
+                        // ignorar si falla
+                        System.out.println("[DEBUG] Fallo al crear reserva con id en linea " + lineaNum + ": " + ex.getMessage());
+                    }
+                } else {
+                    // crear reserva usando el flujo normal (chequeo de disponibilidad dentro)
+                    try {
+                        Reserva r = crearReserva(inicio, fin, numeroHab, h, e);
+                        // crearReserva ya agrega la reserva y asocia al huésped
+                        cargadas++;
+                        System.out.println("[DEBUG] Añadida reserva (auto id) id=" + r.getIdReserva());
+                    } catch (Exception ex) {
+                        // ignorar reservas que no se pueden crear
+                        System.out.println("[DEBUG] No se pudo crear reserva en linea " + lineaNum + ": " + ex.getMessage());
+                    }
+                }
+            } catch (Exception ex) {
+                // ignorar línea malformada
+                System.out.println("[DEBUG] Linea malformada " + lineaNum + ": " + ex.getMessage());
+            }
+        }
+        return cargadas;
+    }
 }

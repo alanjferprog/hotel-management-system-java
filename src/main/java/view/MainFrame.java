@@ -12,6 +12,9 @@ public class MainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel contentPanel;
 
+    // instancia lazy del diálogo de búsqueda de reservas
+    private BuscarReservaDialog buscarReservaDialog = null;
+
     public MainFrame(ControladorGUI controlador) {
         this.controlador = controlador;
         setTitle("Sistema de Reservas - " + controlador.getHotel().getNombre());
@@ -96,7 +99,12 @@ public class MainFrame extends JFrame {
         });
 
         btnVerReserva.addActionListener(e -> {
-            cardLayout.show(contentPanel, "RESERVAR");
+            // Crear el diálogo solo cuando se necesite (lazy)
+            if (buscarReservaDialog == null) {
+                buscarReservaDialog = new BuscarReservaDialog(this, controlador);
+            }
+            buscarReservaDialog.setLocationRelativeTo(this);
+            buscarReservaDialog.setVisible(true);
         });
 
         btnCheckInOut.addActionListener(e -> {

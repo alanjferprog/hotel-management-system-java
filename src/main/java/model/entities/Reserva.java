@@ -24,6 +24,22 @@ public class Reserva {
         this.estado = "pendiente";
     }
 
+    /**
+     * Constructor que permite especificar un id (por ejemplo al cargar desde CSV).
+     * Asegura que el contador está por encima del id para evitar colisiones posteriores.
+     */
+    public Reserva(int idReserva, LocalDate fechaInicio, LocalDate fechaFin, Habitacion habitacion, Huesped huesped, Empleado empleadoResponsable) {
+        this.idReserva = idReserva;
+        // Asegurar que COUNTER avance por encima del id especificado
+        COUNTER.updateAndGet(curr -> Math.max(curr, idReserva + 1));
+        this.fechaInicio = fechaInicio;
+        this.fechaFin = fechaFin;
+        this.habitacion = habitacion;
+        this.huesped = huesped;
+        this.empleadoResponsable = empleadoResponsable;
+        this.estado = "pendiente";
+    }
+
     public int getIdReserva() { return idReserva; }
     public LocalDate getFechaInicio() { return fechaInicio; }
     public LocalDate getFechaFin() { return fechaFin; }
