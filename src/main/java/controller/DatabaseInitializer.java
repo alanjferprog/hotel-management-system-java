@@ -3,6 +3,7 @@ package controller;
 import bdd.ConexionSQLite;
 import dao.HabitacionDAO;
 import dao.ReservaDAO;
+import dao.HuespedDAO;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -42,7 +43,20 @@ public class DatabaseInitializer {
             """;
             stmt.execute(sqlCreateRes);
 
-            // 3) Insertar datos de ejemplo siempre (INSERT OR IGNORE dentro de los DAOs evitará duplicados)
+            // 3) Crear tabla cliente si no existe
+            String sqlCreateCli = """
+                CREATE TABLE IF NOT EXISTS cliente (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT,
+                    dni TEXT,
+                    email TEXT,
+                    telefono TEXT
+                );
+            """;
+            stmt.execute(sqlCreateCli);
+
+            // 4) Insertar datos de ejemplo siempre (INSERT OR IGNORE dentro de los DAOs evitará duplicados)
             try {
                 HabitacionDAO.insertSampleData(conn);
                 System.out.println("Datos de ejemplo (habitaciones) insertados/actualizados en la BD.");
@@ -55,6 +69,13 @@ public class DatabaseInitializer {
                 System.out.println("Datos de ejemplo (reservas) insertados/actualizados en la BD.");
             } catch (SQLException ex) {
                 System.err.println("No se pudieron insertar datos de ejemplo (reservas): " + ex.getMessage());
+            }
+
+            try {
+                HuespedDAO.insertSampleData(conn);
+                System.out.println("Datos de ejemplo (huespedes) insertados/actualizados en la BD.");
+            } catch (SQLException ex) {
+                System.err.println("No se pudieron insertar datos de ejemplo (huespedes): " + ex.getMessage());
             }
 
         } catch (SQLException e) {

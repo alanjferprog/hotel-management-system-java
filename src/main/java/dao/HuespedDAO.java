@@ -9,7 +9,7 @@ import java.util.List;
 
 import model.entities.Huesped;
 
-public class ClienteDAO {
+public class HuespedDAO {
 
     public static void insertSampleData(Connection conn) throws SQLException {
         String sql = "INSERT OR IGNORE INTO cliente (id, nombre, apellido, dni, email, telefono) VALUES (?,?,?,?,?,?)";
@@ -29,7 +29,7 @@ public class ClienteDAO {
                 try {
                     ps.executeUpdate();
                 } catch (SQLException ex) {
-                    System.err.println("No se pudo insertar cliente id=" + row[0] + ": " + ex.getMessage());
+                    System.err.println("No se pudo insertar huesped id=" + row[0] + ": " + ex.getMessage());
                 }
             }
         }
@@ -51,6 +51,38 @@ public class ClienteDAO {
             }
         }
         return list;
+    }
+
+    public static void insert(Connection conn, Huesped h) throws SQLException {
+        String sql = "INSERT INTO cliente (nombre, apellido, dni, email, telefono) VALUES (?,?,?,?,?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, h.getNombre());
+            ps.setString(2, h.getApellido());
+            ps.setString(3, h.getDni());
+            ps.setString(4, h.getEmail());
+            ps.setString(5, h.getTelefono());
+            ps.executeUpdate();
+        }
+    }
+
+    public static void updateByDni(Connection conn, Huesped h) throws SQLException {
+        String sql = "UPDATE cliente SET nombre=?, apellido=?, email=?, telefono=? WHERE dni=?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, h.getNombre());
+            ps.setString(2, h.getApellido());
+            ps.setString(3, h.getEmail());
+            ps.setString(4, h.getTelefono());
+            ps.setString(5, h.getDni());
+            ps.executeUpdate();
+        }
+    }
+
+    public static void deleteByDni(Connection conn, String dni) throws SQLException {
+        String sql = "DELETE FROM cliente WHERE dni = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, dni);
+            ps.executeUpdate();
+        }
     }
 }
 

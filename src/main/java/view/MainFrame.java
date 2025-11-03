@@ -58,7 +58,7 @@ public class MainFrame extends JFrame {
 
         JButton btnVerHabitaciones = new JButton("Ver habitaciones");
         JButton btnVerReserva = new JButton("Ver reserva");
-        JButton btnVerClientes = new JButton("Ver clientes");
+        JButton btnVerHuespedes = new JButton("Ver huéspedes");
         JButton btnCheckInOut = new JButton("Check-in / Check-out");
         JButton btnSalir = new JButton("Salir");
 
@@ -72,11 +72,11 @@ public class MainFrame extends JFrame {
             b.setAlignmentX(Component.CENTER_ALIGNMENT);
         }
 
-        // Añadir estilo al botón Ver Clientes
-        btnVerClientes.setPreferredSize(btnSize);
-        btnVerClientes.setMaximumSize(btnSize);
-        btnVerClientes.setFont(btnFont);
-        btnVerClientes.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Añadir estilo al botón Ver Huéspedes
+        btnVerHuespedes.setPreferredSize(btnSize);
+        btnVerHuespedes.setMaximumSize(btnSize);
+        btnVerHuespedes.setFont(btnFont);
+        btnVerHuespedes.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Salir con más separación encima
         btnSalir.setPreferredSize(btnSize);
@@ -89,7 +89,7 @@ public class MainFrame extends JFrame {
         inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnVerReserva);
         inicioPanel.add(Box.createVerticalStrut(14));
-        inicioPanel.add(btnVerClientes);
+        inicioPanel.add(btnVerHuespedes);
         inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnCheckInOut);
         inicioPanel.add(Box.createVerticalStrut(28)); // más separación antes de Salir
@@ -99,14 +99,16 @@ public class MainFrame extends JFrame {
         contentPanel.add(inicioPanel, "INICIO");
         contentPanel.add(reservarPanel, "RESERVAR");
         contentPanel.add(verPanel, "VER");
-        // agregar panel de clientes
-        VerClientesPanel clientesPanel = new VerClientesPanel(controlador);
-        contentPanel.add(clientesPanel, "CLIENTES");
+        // agregar panel de huéspedes
+        VerHuespedesPanel huespedesPanel = new VerHuespedesPanel(controlador);
+        contentPanel.add(huespedesPanel, "HUESPEDES");
         contentPanel.add(checkinout, "CHECK");
         add(contentPanel, BorderLayout.CENTER);
 
         // Conectar acción de volver desde VerHabitacionesPanel
         verPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
+        // Conectar acción de volver desde VerHuespedesPanel
+        huespedesPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
         // Conectar acción de reservar desde VerHabitacionesPanel: mostrar formulario y prefill numero
         verPanel.setOnReservar(numero -> {
             reservarPanel.setNumeroHabitacion(numero);
@@ -122,9 +124,9 @@ public class MainFrame extends JFrame {
             verPanel.refresh();
         });
 
-        btnVerClientes.addActionListener(e -> {
-            cardLayout.show(contentPanel, "CLIENTES");
-            clientesPanel.refresh();
+        btnVerHuespedes.addActionListener(e -> {
+            cardLayout.show(contentPanel, "HUESPEDES");
+            huespedesPanel.refresh();
         });
 
         btnVerReserva.addActionListener(e -> {

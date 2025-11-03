@@ -114,13 +114,29 @@ public class ControladorGUI {
     }
 
     /**
-     * Carga clientes desde la BD y devuelve la lista de Huesped
+     * Carga huespedes desde la BD y devuelve la lista de Huesped
      */
-    public java.util.List<model.entities.Huesped> cargarClientesDesdeDB() throws java.sql.SQLException {
+    public java.util.List<model.entities.Huesped> cargarHuespedesDesdeDB() throws java.sql.SQLException {
         try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
-            return dao.ClienteDAO.findAll(conn);
+            return dao.HuespedDAO.findAll(conn);
         }
     }
 
-    // NOTE: Removed CSV-loading helper methods. Data loading should be done via the database layer / DAOs.
+    public void insertarHuespedEnDB(model.entities.Huesped h) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.HuespedDAO.insert(conn, h);
+        }
+    }
+
+    public void actualizarHuespedEnDB(model.entities.Huesped h) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.HuespedDAO.updateByDni(conn, h);
+        }
+    }
+
+    public void eliminarHuespedEnDB(String dni) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.HuespedDAO.deleteByDni(conn, dni);
+        }
+    }
 }
