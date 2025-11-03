@@ -5,8 +5,15 @@ import model.entities.*;
 import model.exceptions.*;
 
 import java.time.LocalDate;
-import java.io.IOException;
 import java.util.Optional;
+
+// Nuevos imports para BD
+import bdd.ConexionSQLite;
+import dao.HabitacionDAO;
+import dao.ReservaDAO; // nota: existe ReservaDAO (insert), pero necesitaremos un reader - crearé uno si hace falta
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
 
 public class ControladorGUI {
     private Hotel hotel;
@@ -26,28 +33,94 @@ public class ControladorGUI {
         hotel.confirmarReserva(idReserva);
     }
 
-    /**
-     * Carga las habitaciones desde un CSV relativo a la raiz del proyecto.
-     * Retorna la cantidad de habitaciones cargadas o lanza IOException si falla la lectura.
-     */
-    public int cargarHabitacionesDesdeCSV(String rutaRelativa) throws IOException {
-        return hotel.cargarHabitacionesDesdeCSV(rutaRelativa);
-    }
-
     /** Busca una reserva por su id en memoria. */
     public Optional<Reserva> buscarReservaPorId(int id) {
         return hotel.getReservas().stream().filter(r -> r.getIdReserva() == id).findFirst();
     }
 
     /**
-     * Carga reservas desde un CSV simple. Devuelve la cantidad de reservas añadidas.
-     * Formato esperado por línea (csv): fechaInicio,fechaFin,numeroHab,nombre,apellido,dni,email,telefono
+     * Carga habitaciones desde la base de datos (SQLite) y las poblá en el Hotel en memoria.
+     * Retorna la cantidad de habitaciones cargadas.
      */
-    public int cargarReservasDesdeCSV(String rutaRelativa) throws IOException {
-        return hotel.cargarReservasDesdeCSV(rutaRelativa);
+    public int cargarHabitacionesDesdeDB() throws SQLException {
+        try (Connection conn = ConexionSQLite.conectar()) {
+            List<Habitacion> hs = HabitacionDAO.findAll(conn);
+            // Reemplazar la lista en memoria
+            hotel.getHabitaciones().clear();
+            for (Habitacion h : hs) hotel.agregarHabitacion(h);
+            return hs.size();
+        }
     }
 
-    //public void cancelarReserva(int idReserva) throws ReservaInvalidaException {
-    //    hotel.cancelarReserva(idReserva);
-    //}
+    /**
+     * Carga reservas desde la BD y las poblá en el Hotel en memoria.
+     */
+    public int cargarReservasDesdeDB() throws SQLException {
+        try (Connection conn = ConexionSQLite.conectar()) {
+            // Necesitamos un DAO lector de reservas. Implementaré uno simple aquí si no existe.
+            List<Reserva> reservas = new java.util.ArrayList<>();
+            String sql = "SELECT id, fechaInicio, fechaFin, numeroHab, nombre, apellido, dni, email, telefono, estado FROM reserva ORDER BY id";
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+                 java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    java.time.LocalDate inicio = java.time.LocalDate.parse(rs.getString("fechaInicio"));
+                    java.time.LocalDate fin = java.time.LocalDate.parse(rs.getString("fechaFin"));
+                    int numeroHab = rs.getInt("numeroHab");
+                    String nombre = rs.getString("nombre");
+                    String apellido = rs.getString("apellido");
+                    String dni = rs.getString("dni");
+                    String email = rs.getString("email");
+                    String telefono = rs.getString("telefono");
+                    String estado = rs.getString("estado");
+
+                    // Buscar habitacion en memoria (debe estar cargada previamente)
+                    java.util.Optional<Habitacion> habOpt = hotel.buscarHabitacionPorNumero(numeroHab);
+                    if (!habOpt.isPresent()) continue; // ignorar si no existe
+                    Habitacion hab = habOpt.get();
+
+                    Huesped h = new Huesped(nombre == null ? "" : nombre, apellido == null ? "" : apellido, dni == null ? "" : dni, email == null ? "" : email, telefono == null ? "" : telefono);
+                    Reserva r = new Reserva(id, inicio, fin, hab, h, new Empleado(1, "DB", "Init", "00000000", "System"));
+                    // establecer estado si viene
+                    if (estado != null) {
+                        try {
+                            java.lang.reflect.Field f = Reserva.class.getDeclaredField("estado");
+                            f.setAccessible(true);
+                            f.set(r, estado);
+                        } catch (Exception ex) {
+                            // ignorar
+                        }
+                    }
+                    reservas.add(r);
+                }
+            }
+            // Reemplazar reservas en memoria
+            hotel.getReservas().clear();
+            for (Reserva rr : reservas) {
+                hotel.getReservas().add(rr);
+                rr.getHuesped().addReserva(rr);
+            }
+            return reservas.size();
+        }
+    }
+
+    /**
+     * Persiste una reserva en la BD (INSERT OR REPLACE).
+     */
+    public void guardarReservaEnDB(Reserva r) throws SQLException {
+        try (Connection conn = ConexionSQLite.conectar()) {
+            dao.ReservaDAO.insertReserva(conn, r);
+        }
+    }
+
+    /**
+     * Carga clientes desde la BD y devuelve la lista de Huesped
+     */
+    public java.util.List<model.entities.Huesped> cargarClientesDesdeDB() throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            return dao.ClienteDAO.findAll(conn);
+        }
+    }
+
+    // NOTE: Removed CSV-loading helper methods. Data loading should be done via the database layer / DAOs.
 }

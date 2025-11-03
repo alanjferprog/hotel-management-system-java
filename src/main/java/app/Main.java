@@ -1,43 +1,39 @@
 package app;
 
-// File: src/main/java/view/Main.java
-
 import model.core.Hotel;
 import model.entities.Habitacion;
 import view.ControladorGUI;
 import view.MainFrame;
-
 import javax.swing.SwingUtilities;
-import java.io.IOException;
+import controller.DatabaseInitializer;
+import bdd.ConexionSQLite;
+import dao.HabitacionDAO;
+
+import java.sql.Connection;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+
+        // 1) Inicializar la base de datos (tabla + datos ejemplo)
+        DatabaseInitializer.initialize();
+
+        // 2) Arrancar la UI
         SwingUtilities.invokeLater(() -> {
             Hotel hotel = new Hotel("Hotel Ejemplo");
 
+            // Intentar cargar habitaciones desde la DB
+            try (Connection conn = ConexionSQLite.conectar()) {
+                List<Habitacion> habitaciones = HabitacionDAO.findAll(conn);
+                for (Habitacion h : habitaciones) hotel.agregarHabitacion(h);
+                System.out.println("Habitaciones cargadas desde DB: " + habitaciones.size());
+            } catch (Exception ex) {
+                System.err.println("No se pudo cargar habitaciones desde DB: " + ex.getMessage());
+            }
+
             ControladorGUI controlador = new ControladorGUI(hotel);
 
-            // Intentar cargar desde CSV en data/habitaciones.csv
-            try {
-                int cargadas = controlador.cargarHabitacionesDesdeCSV("data/habitaciones.csv");
-                System.out.println("Habitaciones cargadas desde CSV: " + cargadas);
-            } catch (IOException e) {
-                System.out.println("No se pudo cargar CSV (se usarán datos por defecto): " + e.getMessage());
-
-                // Habitaciones de ejemplo (fallback)
-                hotel.agregarHabitacion(new Habitacion(101, "Simple", 50.0));
-                hotel.agregarHabitacion(new Habitacion(102, "Doble", 80.0));
-                hotel.agregarHabitacion(new Habitacion(201, "Suite", 150.0));
-                hotel.agregarHabitacion(new Habitacion(202, "Suite Deluxe", 220.0));
-            }
-
-            // Intentar cargar un CSV de reservas (opcional)
-            try {
-                int rc = controlador.cargarReservasDesdeCSV("data/reservas.csv");
-                System.out.println("Reservas cargadas desde CSV: " + rc);
-            } catch (IOException e) {
-                // no es crítico
-            }
+            // TODO: conectar aquí con DAO/Repositorio que lea la DB (SQLite) y cargue habitaciones y reservas.
 
             MainFrame frame = new MainFrame(controlador);
             frame.setLocationRelativeTo(null);

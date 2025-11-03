@@ -7,15 +7,29 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.LocalDate;
+import java.sql.SQLException; // añadido
+import java.time.format.DateTimeParseException;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+import java.time.format.SignStyle;
 
 public class ReservarPanel extends JPanel {
     private ControladorGUI controlador;
     private JTextField tfNombre, tfApellido, tfDni, tfEmail, tfTelefono, tfNumeroHab;
     private JTextField tfFechaInicio, tfFechaFin;
-    private JTextArea taOutput;
     private JButton btnReservar;
     private JButton btnVolver;
     private Runnable onBackCallback;
+
+    // Formato flexible: acepta yyyy-M-d o yyyy-MM-dd (mes y día con 1 o 2 dígitos)
+    private static final java.time.format.DateTimeFormatter FLEXIBLE_DATE_FORMAT =
+            new DateTimeFormatterBuilder()
+                    .appendValue(ChronoField.YEAR, 4)
+                    .appendLiteral('-')
+                    .appendValue(ChronoField.MONTH_OF_YEAR, 1, 2, SignStyle.NOT_NEGATIVE)
+                    .appendLiteral('-')
+                    .appendValue(ChronoField.DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
+                    .toFormatter();
 
     public ReservarPanel(ControladorGUI controlador) {
         this.controlador = controlador;
@@ -49,11 +63,8 @@ public class ReservarPanel extends JPanel {
             if (onBackCallback != null) onBackCallback.run();
         });
 
-        taOutput = new JTextArea(8,40);
-        taOutput.setEditable(false);
-
-        add(form, BorderLayout.NORTH);
-        add(new JScrollPane(taOutput), BorderLayout.CENTER);
+        // Colocar el formulario en el centro para que ocupe el espacio y no deje un área en blanco debajo
+        add(form, BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottom.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
@@ -76,6 +87,30 @@ public class ReservarPanel extends JPanel {
         this.onBackCallback = onBack;
     }
 
+    private LocalDate parseFechaFlexible(String text) throws IllegalArgumentException {
+        String t = text == null ? "" : text.trim();
+        if (t.isEmpty() || t.equalsIgnoreCase("yyyy-mm-dd")) {
+            throw new IllegalArgumentException("La fecha no está completada");
+        }
+        try {
+            return LocalDate.parse(t, FLEXIBLE_DATE_FORMAT);
+        } catch (DateTimeParseException dtpe) {
+            // Re-throw para manejo arriba
+            throw new IllegalArgumentException("Formato de fecha inválido. Use yyyy-MM-dd o yyyy-M-d", dtpe);
+        }
+    }
+
+    private void limpiarFormulario() {
+        tfNombre.setText("");
+        tfApellido.setText("");
+        tfDni.setText("");
+        tfEmail.setText("");
+        tfTelefono.setText("");
+        tfNumeroHab.setText("");
+        tfFechaInicio.setText("yyyy-mm-dd");
+        tfFechaFin.setText("yyyy-mm-dd");
+    }
+
     private void onReservar(ActionEvent ev) {
         try {
             String nombre = tfNombre.getText().trim();
@@ -84,8 +119,8 @@ public class ReservarPanel extends JPanel {
             String email = tfEmail.getText().trim();
             String telefono = tfTelefono.getText().trim();
             int numeroHab = Integer.parseInt(tfNumeroHab.getText().trim());
-            LocalDate inicio = LocalDate.parse(tfFechaInicio.getText().trim());
-            LocalDate fin = LocalDate.parse(tfFechaFin.getText().trim());
+            LocalDate inicio = parseFechaFlexible(tfFechaInicio.getText());
+            LocalDate fin = parseFechaFlexible(tfFechaFin.getText());
 
             Huesped h = new Huesped(nombre, apellido, dni, email, telefono);
 
@@ -93,14 +128,46 @@ public class ReservarPanel extends JPanel {
                     ? new Empleado(1, "Admin", "Admin", "00000000", "Reception")
                     : controlador.getHotel().getEmpleados().get(0);
 
+            // Si el hotel no tiene empleados, añadir el empleado por defecto para que las reservas queden ligadas
+            if (controlador.getHotel().getEmpleados().isEmpty()) {
+                controlador.getHotel().agregarEmpleado(e);
+            }
+
             Reserva r = controlador.crearReserva(inicio, fin, numeroHab, h, e);
-            taOutput.append("Reserva creada: " + r + "\n");
+
+            // Persistir en BD
+            try {
+                controlador.guardarReservaEnDB(r);
+                // Mostrar componente de éxito con el número de reserva
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this,
+                            "Reserva realizada con éxito, su nro de reserva es: #" + r.getIdReserva(),
+                            "Reserva exitosa",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    // Refrescar tabla de habitaciones en MainFrame si está presente
+                    java.awt.Window w = SwingUtilities.getWindowAncestor(this);
+                    if (w instanceof MainFrame) {
+                        ((MainFrame) w).refresh();
+                        // Volver al menú principal
+                        ((MainFrame) w).showInicio();
+                    }
+                });
+
+                // limpiar formulario tras el éxito
+                limpiarFormulario();
+
+            } catch (SQLException sqle) {
+                JOptionPane.showMessageDialog(this, "Error al guardar en DB: " + sqle.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
+            }
         } catch (NumberFormatException nfe) {
-            taOutput.append("Número de habitación inválido\n");
+            JOptionPane.showMessageDialog(this, "Número de habitación inválido", "Error", JOptionPane.ERROR_MESSAGE);
         } catch (HabitacionNoDisponibleException | ReservaInvalidaException ex) {
-            taOutput.append("Error: " + ex.getMessage() + "\n");
+            // Mostrar alerta modal para estos errores
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "No es posible reservar", JOptionPane.WARNING_MESSAGE);
+        } catch (IllegalArgumentException iae) {
+            JOptionPane.showMessageDialog(this, iae.getMessage(), "Fecha inválida", JOptionPane.WARNING_MESSAGE);
         } catch (Exception ex) {
-            taOutput.append("Error inesperado: " + ex.getMessage() + "\n");
+            JOptionPane.showMessageDialog(this, "Error inesperado: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
     }

@@ -85,7 +85,10 @@ public class VerHabitacionesPanel extends JPanel {
         public ButtonRenderer() { setOpaque(true); }
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            setText(value == null ? "" : value.toString());
+            String estado = String.valueOf(table.getValueAt(row, 3));
+            boolean disponible = "disponible".equalsIgnoreCase(estado);
+            setText(disponible ? (value == null ? "" : value.toString()) : "No disponible");
+            setEnabled(disponible);
             return this;
         }
     }
@@ -105,7 +108,11 @@ public class VerHabitacionesPanel extends JPanel {
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             label = value == null ? "" : value.toString();
-            button.setText(label);
+            // comprobar estado para habilitar/deshabilitar
+            String estado = String.valueOf(table.getValueAt(row, 3));
+            boolean disponible = "disponible".equalsIgnoreCase(estado);
+            button.setText(disponible ? label : "No disponible");
+            button.setEnabled(disponible);
             this.fila = row;
             return button;
         }
@@ -122,6 +129,15 @@ public class VerHabitacionesPanel extends JPanel {
         public void actionPerformed(ActionEvent e) {
             // obtener número de habitación de la fila y ejecutar callback
             int numero = (int) tabla.getValueAt(fila, 0);
+            String estado = String.valueOf(tabla.getValueAt(fila, 3));
+            boolean disponible = "disponible".equalsIgnoreCase(estado);
+            if (!disponible) {
+                // mostrar alerta modal
+                Window w = SwingUtilities.getWindowAncestor(tabla);
+                JOptionPane.showMessageDialog(w, "La habitación no está disponible para reservar.", "No disponible", JOptionPane.WARNING_MESSAGE);
+                fireEditingStopped();
+                return;
+            }
             if (onReservarCallback != null) onReservarCallback.accept(numero);
             fireEditingStopped();
         }

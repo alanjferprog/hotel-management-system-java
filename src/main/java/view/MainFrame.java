@@ -22,6 +22,18 @@ public class MainFrame extends JFrame {
         setSize(900, 600);
         setLayout(new BorderLayout());
 
+        // Intentar cargar habitaciones desde DB al inicializar la UI
+        try {
+            int cargadas = controlador.cargarHabitacionesDesdeDB();
+            System.out.println("Habitaciones cargadas desde DB (MainFrame): " + cargadas);
+            // Cargar reservas asociadas desde DB
+            int rc = controlador.cargarReservasDesdeDB();
+            System.out.println("Reservas cargadas desde DB (MainFrame): " + rc);
+        } catch (Exception ex) {
+            System.err.println("No se pudieron cargar datos desde DB en MainFrame: " + ex.getMessage());
+            // fallback: se puede poblar manualmente desde Main si es necesario
+        }
+
         // Header (logo / nombre)
         JPanel header = new JPanel(new BorderLayout());
         JLabel logoLabel = new JLabel(controlador.getHotel().getNombre(), SwingConstants.CENTER);
@@ -46,6 +58,7 @@ public class MainFrame extends JFrame {
 
         JButton btnVerHabitaciones = new JButton("Ver habitaciones");
         JButton btnVerReserva = new JButton("Ver reserva");
+        JButton btnVerClientes = new JButton("Ver clientes");
         JButton btnCheckInOut = new JButton("Check-in / Check-out");
         JButton btnSalir = new JButton("Salir");
 
@@ -59,6 +72,12 @@ public class MainFrame extends JFrame {
             b.setAlignmentX(Component.CENTER_ALIGNMENT);
         }
 
+        // Añadir estilo al botón Ver Clientes
+        btnVerClientes.setPreferredSize(btnSize);
+        btnVerClientes.setMaximumSize(btnSize);
+        btnVerClientes.setFont(btnFont);
+        btnVerClientes.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         // Salir con más separación encima
         btnSalir.setPreferredSize(btnSize);
         btnSalir.setMaximumSize(btnSize);
@@ -70,6 +89,8 @@ public class MainFrame extends JFrame {
         inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnVerReserva);
         inicioPanel.add(Box.createVerticalStrut(14));
+        inicioPanel.add(btnVerClientes);
+        inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnCheckInOut);
         inicioPanel.add(Box.createVerticalStrut(28)); // más separación antes de Salir
         inicioPanel.add(btnSalir);
@@ -78,6 +99,9 @@ public class MainFrame extends JFrame {
         contentPanel.add(inicioPanel, "INICIO");
         contentPanel.add(reservarPanel, "RESERVAR");
         contentPanel.add(verPanel, "VER");
+        // agregar panel de clientes
+        VerClientesPanel clientesPanel = new VerClientesPanel(controlador);
+        contentPanel.add(clientesPanel, "CLIENTES");
         contentPanel.add(checkinout, "CHECK");
         add(contentPanel, BorderLayout.CENTER);
 
@@ -96,6 +120,11 @@ public class MainFrame extends JFrame {
         btnVerHabitaciones.addActionListener(e -> {
             cardLayout.show(contentPanel, "VER");
             verPanel.refresh();
+        });
+
+        btnVerClientes.addActionListener(e -> {
+            cardLayout.show(contentPanel, "CLIENTES");
+            clientesPanel.refresh();
         });
 
         btnVerReserva.addActionListener(e -> {
@@ -122,5 +151,10 @@ public class MainFrame extends JFrame {
 
     public void refresh() {
         verPanel.refresh();
+    }
+
+    /** Muestra la tarjeta de inicio (menú principal) */
+    public void showInicio() {
+        cardLayout.show(contentPanel, "INICIO");
     }
 }
