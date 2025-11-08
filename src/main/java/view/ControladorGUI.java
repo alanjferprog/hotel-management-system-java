@@ -80,7 +80,7 @@ public class ControladorGUI {
                     Habitacion hab = habOpt.get();
 
                     Huesped h = new Huesped(nombre == null ? "" : nombre, apellido == null ? "" : apellido, dni == null ? "" : dni, email == null ? "" : email, telefono == null ? "" : telefono);
-                    Reserva r = new Reserva(id, inicio, fin, hab, h, new Empleado(1, "DB", "Init", "00000000", "System"));
+                    Reserva r = new Reserva(id, inicio, fin, hab, h, new Empleado(1, "DB", "Init", "00000000", "System", "All Day"));
                     // establecer estado si viene
                     if (estado != null) {
                         try {
@@ -112,6 +112,33 @@ public class ControladorGUI {
             dao.ReservaDAO.insertReserva(conn, r);
         }
     }
+
+    /** Carga los empleados desde la BD y devuelve la lista de Empelados */
+
+    public java.util.List<model.entities.Empleado> cargarEmpleadoDesdeBD() throws java.sql.SQLException {
+        try(java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            return dao.EmpleadoDAO.findAll(conn);
+        }
+    }
+
+    public void insertarEmpleadoEnDB(model.entities.Empleado e) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.EmpleadoDAO.insert(conn, e);
+        }
+    }
+    
+    public void actualizarEmpleadoEnDB(model.entities.Empleado e) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.EmpleadoDAO.updateByDni(conn, e);
+        }
+    }
+
+    public void eliminarEmpleadoEnDB(String dni) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.EmpleadoDAO.deleteByDni(conn, dni);
+        }
+    }
+
 
     /**
      * Carga huespedes desde la BD y devuelve la lista de Huesped

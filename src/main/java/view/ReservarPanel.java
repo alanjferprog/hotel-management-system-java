@@ -125,7 +125,7 @@ public class ReservarPanel extends JPanel {
             Huesped h = new Huesped(nombre, apellido, dni, email, telefono);
 
             Empleado e = controlador.getHotel().getEmpleados().isEmpty()
-                    ? new Empleado(1, "Admin", "Admin", "00000000", "Reception")
+                    ? new Empleado(1, "Admin", "Admin", "00000000", "Reception", "AM")
                     : controlador.getHotel().getEmpleados().get(0);
 
             // Si el hotel no tiene empleados, añadir el empleado por defecto para que las reservas queden ligadas

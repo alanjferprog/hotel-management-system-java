@@ -3,7 +3,9 @@ package controller;
 import bdd.ConexionSQLite;
 import dao.HabitacionDAO;
 import dao.ReservaDAO;
+import model.entities.Empleado;
 import dao.HuespedDAO;
+import dao.EmpleadoDAO;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -56,6 +58,18 @@ public class DatabaseInitializer {
             """;
             stmt.execute(sqlCreateCli);
 
+            String sqlCreateEmp = """
+                    CREATE TABLE IF NOT EXISTS empleado (
+                    id INTEGER PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    apellido TEXT,
+                    dni TEXT,
+                    cargo TEXT,
+                    turno TEXT
+                    );
+            """;
+            stmt.execute(sqlCreateEmp);
+
             // 4) Insertar datos de ejemplo siempre (INSERT OR IGNORE dentro de los DAOs evitará duplicados)
             try {
                 HabitacionDAO.insertSampleData(conn);
@@ -69,6 +83,13 @@ public class DatabaseInitializer {
                 System.out.println("Datos de ejemplo (reservas) insertados/actualizados en la BD.");
             } catch (SQLException ex) {
                 System.err.println("No se pudieron insertar datos de ejemplo (reservas): " + ex.getMessage());
+            }
+
+            try {
+                EmpleadoDAO.insertSampleData(conn);
+                System.out.println("Datos de ejemplo (empleados) insertados/actualizados en la BD.");
+            } catch (SQLException ex) {
+                System.err.println("No se pudieron insertar datos de ejemplo (empleados): " + ex.getMessage());
             }
 
             try {

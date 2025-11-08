@@ -8,6 +8,7 @@ public class MainFrame extends JFrame {
     private ReservarPanel reservarPanel;
     private VerHabitacionesPanel verPanel;
     private CheckInOutPanel checkinout;
+    private VerEmpleadosPanel empleadoPanel;
 
     private CardLayout cardLayout;
     private JPanel contentPanel;
@@ -43,6 +44,7 @@ public class MainFrame extends JFrame {
         add(header, BorderLayout.NORTH);
 
         // Panels (instancias)
+        empleadoPanel = new VerEmpleadosPanel(controlador);
         reservarPanel = new ReservarPanel(controlador);
         verPanel = new VerHabitacionesPanel(controlador);
         checkinout = new CheckInOutPanel(controlador);
@@ -56,6 +58,7 @@ public class MainFrame extends JFrame {
         inicioPanel.setLayout(new BoxLayout(inicioPanel, BoxLayout.Y_AXIS));
         inicioPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
+        JButton btnVerEmpleados = new JButton("Ver Empleados");
         JButton btnVerHabitaciones = new JButton("Ver habitaciones");
         JButton btnVerReserva = new JButton("Ver reserva");
         JButton btnVerHuespedes = new JButton("Ver huéspedes");
@@ -65,7 +68,7 @@ public class MainFrame extends JFrame {
         Dimension btnSize = new Dimension(220, 54);
         Font btnFont = new Font("SansSerif", Font.PLAIN, 16);
 
-        for (JButton b : new JButton[] { btnVerHabitaciones, btnVerReserva, btnCheckInOut }) {
+        for (JButton b : new JButton[] { btnVerEmpleados, btnVerHabitaciones, btnVerReserva, btnCheckInOut }) {
             b.setPreferredSize(btnSize);
             b.setMaximumSize(btnSize);
             b.setFont(btnFont);
@@ -85,6 +88,8 @@ public class MainFrame extends JFrame {
         btnSalir.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         inicioPanel.add(Box.createVerticalGlue());
+        inicioPanel.add(btnVerEmpleados);
+        inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnVerHabitaciones);
         inicioPanel.add(Box.createVerticalStrut(14));
         inicioPanel.add(btnVerReserva);
@@ -127,6 +132,11 @@ public class MainFrame extends JFrame {
         btnVerHuespedes.addActionListener(e -> {
             cardLayout.show(contentPanel, "HUESPEDES");
             huespedesPanel.refresh();
+        });
+
+        btnVerEmpleados.addActionListener(e -> {
+            cardLayout.show(contentPanel, "Empleados");
+            empleadoPanel.refresh();
         });
 
         btnVerReserva.addActionListener(e -> {
