@@ -44,7 +44,8 @@ public class EmpleadoDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                int idEmpleado = rs.getInt(0);
+                // Usar nombres de columna (o índices 1-based) para evitar "column 0 out of bounds"
+                int idEmpleado = rs.getInt("id");
                 String nombre = rs.getString("nombre");
                 String apellido = rs.getString("apellido");
                 String dni = rs.getString("dni");
@@ -53,20 +54,30 @@ public class EmpleadoDAO {
                 Empleado e = new Empleado(idEmpleado, nombre, apellido, dni, cargo, turno);
                 list.add(e);
             }
+        } catch (SQLException ex) {
+            // Propagar con mensaje más claro para la UI
+            throw new SQLException("Error al leer empleados: " + ex.getMessage(), ex);
         }
         return list;
     }
 
     public static void insert(Connection conn, Empleado e) throws SQLException {
-        String sql = "INSERT INTO empleado (id, nombre, apellido, dni, cargo, turno) VALUES (?,?,?,?,?,?)";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, e.getIdEmpleado());
-            ps.setString(2, e.getNombre());
-            ps.setString(3, e.getApellido());
-            ps.setString(4, e.getDni());
-            ps.setString(5, e.getCargo());
-            ps.setString(6, e.getTurno());
+        // No incluir la columna id para que SQLite la genere automáticamente
+        String sql = "INSERT INTO empleado (nombre, apellido, dni, cargo, turno) VALUES (?,?,?,?,?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, e.getNombre());
+            ps.setString(2, e.getApellido());
+            ps.setString(3, e.getDni());
+            ps.setString(4, e.getCargo());
+            ps.setString(5, e.getTurno());
             ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int generatedId = keys.getInt(1);
+                    // Si necesitas usar el id, podrías devolverlo o asignarlo al objeto si tu entidad lo permite
+                    // e.setIdEmpleado(generatedId); // la clase Empleado no tiene setter, se deja así
+                }
+            }
         }
     }
 
@@ -90,4 +101,3 @@ public class EmpleadoDAO {
         }
     }
 }
-

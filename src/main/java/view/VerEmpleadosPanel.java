@@ -8,7 +8,6 @@ import controller.DatabaseInitializer;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
 import java.util.List;
 
 public class VerEmpleadosPanel extends JPanel {
@@ -23,12 +22,23 @@ public class VerEmpleadosPanel extends JPanel {
         this.controlador = controlador;
         setLayout(new BorderLayout());
 
-        modelo = new DefaultTableModel(new Object[]{0 ,"Nombre","Apellido","DNI","Cargo","Turno"}, 0) {
+        // Mantener la columna Id en el modelo (para operaciones internas) pero ocultarla en la vista
+        modelo = new DefaultTableModel(new Object[]{"Id","Nombre","Apellido","DNI","Cargo","Turno"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
         };
         tabla = new JTable(modelo);
         tabla.setFillsViewportHeight(true);
+        // Ocultar la columna Id de la vista (tabla) pero conservarla en el modelo
+        if (tabla.getColumnModel().getColumnCount() > 0) {
+            try {
+                // removeColumn usa el índice de la vista; aquí removemos la primera columna (Id)
+                tabla.removeColumn(tabla.getColumnModel().getColumn(0));
+            } catch (Exception ex) {
+                // no bloquear la UI por este paso
+                System.err.println("No se pudo ocultar columna Id en la tabla de empleados: " + ex.getMessage());
+            }
+        }
         add(new JScrollPane(tabla), BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -83,7 +93,15 @@ public class VerEmpleadosPanel extends JPanel {
         dlg.setVisible(true);
         if (dlg.isOk()) {
             try {
-                controlador.insertarEmpleadoEnDB(dlg.getEmpleado());
+                Empleado nuevo = dlg.getEmpleado();
+                // Validación: DNI único
+                List<Empleado> actuales = controlador.cargarEmpleadoDesdeBD();
+                boolean existe = actuales.stream().anyMatch(e -> e.getDni() != null && e.getDni().equalsIgnoreCase(nuevo.getDni()));
+                if (existe) {
+                    JOptionPane.showMessageDialog(this, "Ya existe un empleado con DNI " + nuevo.getDni(), "Validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                controlador.insertarEmpleadoEnDB(nuevo);
                 refresh();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al insertar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -105,6 +123,14 @@ public class VerEmpleadosPanel extends JPanel {
         dlg.setVisible(true);
         if (dlg.isOk()) {
             try {
+                // Validar que el empleado aún exista en BD
+                List<Empleado> actuales = controlador.cargarEmpleadoDesdeBD();
+                boolean existe = actuales.stream().anyMatch(e -> e.getIdEmpleado() == actual.getIdEmpleado());
+                if (!existe) {
+                    JOptionPane.showMessageDialog(this, "El empleado seleccionado ya no existe en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    refresh();
+                    return;
+                }
                 controlador.actualizarEmpleadoEnDB(dlg.getEmpleado());
                 refresh();
             } catch (Exception ex) {
@@ -119,6 +145,14 @@ public class VerEmpleadosPanel extends JPanel {
         String dni = String.valueOf(modelo.getValueAt(sel,3));
         if (JOptionPane.showConfirmDialog(this, "¿Eliminar huésped con DNI " + dni + "?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
+                // Validar existencia
+                List<Empleado> actuales = controlador.cargarEmpleadoDesdeBD();
+                boolean existe = actuales.stream().anyMatch(e -> e.getDni() != null && e.getDni().equalsIgnoreCase(dni));
+                if (!existe) {
+                    JOptionPane.showMessageDialog(this, "El empleado con DNI " + dni + " no existe en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+                    refresh();
+                    return;
+                }
                 controlador.eliminarEmpleadoEnDB(dni);
                 refresh();
             } catch (Exception ex) {

@@ -104,6 +104,8 @@ public class MainFrame extends JFrame {
         contentPanel.add(inicioPanel, "INICIO");
         contentPanel.add(reservarPanel, "RESERVAR");
         contentPanel.add(verPanel, "VER");
+        // Registrar el panel de empleados en el CardLayout
+        contentPanel.add(empleadoPanel, "EMPLEADOS");
         // agregar panel de huéspedes
         VerHuespedesPanel huespedesPanel = new VerHuespedesPanel(controlador);
         contentPanel.add(huespedesPanel, "HUESPEDES");
@@ -135,7 +137,7 @@ public class MainFrame extends JFrame {
         });
 
         btnVerEmpleados.addActionListener(e -> {
-            cardLayout.show(contentPanel, "Empleados");
+            cardLayout.show(contentPanel, "EMPLEADOS");
             empleadoPanel.refresh();
         });
 
