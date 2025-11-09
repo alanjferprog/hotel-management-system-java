@@ -49,6 +49,20 @@ public class Hotel {
         }
         Habitacion hab = buscarHabitacionPorNumero(numeroHab)
                 .orElseThrow(() -> new HabitacionNoDisponibleException("No existe la habitación " + numeroHab));
+        // Comprobar conflictos con reservas existentes para esa habitación
+        for (Reserva existente : reservas) {
+            if (existente.getHabitacion().getNumero() != numeroHab) continue;
+            // Si las fechas se solapan: [inicio,fin) vs [existente.inicio, existente.fin)
+            LocalDate a1 = inicio;
+            LocalDate b1 = fin;
+            LocalDate a2 = existente.getFechaInicio();
+            LocalDate b2 = existente.getFechaFin();
+            boolean overlap = !(b1.isBefore(a2) || b2.isBefore(a1));
+            if (overlap) {
+                throw new HabitacionNoDisponibleException("La habitación " + numeroHab + " ya está reservada entre " + a2 + " y " + b2);
+            }
+        }
+
         if (!hab.estaDisponible()) throw new HabitacionNoDisponibleException("Habitación no disponible: " + numeroHab);
 
         Reserva r = new Reserva(inicio, fin, hab, huesped, empleado);

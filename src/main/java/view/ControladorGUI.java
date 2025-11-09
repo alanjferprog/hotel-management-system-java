@@ -113,6 +113,13 @@ public class ControladorGUI {
         }
     }
 
+    /** Actualiza el estado de una habitación en la BD (por número) */
+    public void actualizarEstadoHabitacionEnDB(int numero, String estado) throws SQLException {
+        try (Connection conn = ConexionSQLite.conectar()) {
+            dao.HabitacionDAO.updateEstado(conn, numero, estado);
+        }
+    }
+
     /** Carga los empleados desde la BD y devuelve la lista de Empelados */
 
     public java.util.List<model.entities.Empleado> cargarEmpleadoDesdeBD() throws java.sql.SQLException {

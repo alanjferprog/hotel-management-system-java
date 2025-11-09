@@ -35,7 +35,7 @@ public class HabitacionDAO {
 
         Object[][] datos = new Object[][]{
             {101, "Simple", 45.000, "disponible"},
-            {102, "Simple", 45.000, "ocupada"},
+            {102, "Simple", 45.000, "no disponible"},
             {103, "Doble", 65.000, "disponible"},
             {104, "Doble", 65.000, "disponible"},
             {105, "Suite Junior", 85.000, "disponible"},
@@ -65,6 +65,16 @@ public class HabitacionDAO {
                     System.err.println("No se pudo insertar habitacion " + row[0] + ": " + e.getMessage());
                 }
             }
+        }
+    }
+
+    // Nuevo: actualizar el estado de una habitación por su número
+    public static void updateEstado(Connection conn, int numero, String estado) throws SQLException {
+        String sql = "UPDATE habitacion SET estado = ? WHERE numero = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, estado);
+            ps.setInt(2, numero);
+            ps.executeUpdate();
         }
     }
 }

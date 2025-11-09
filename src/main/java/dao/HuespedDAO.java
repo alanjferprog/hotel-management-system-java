@@ -14,9 +14,21 @@ public class HuespedDAO {
     public static void insertSampleData(Connection conn) throws SQLException {
         String sql = "INSERT OR IGNORE INTO cliente (id, nombre, apellido, dni, email, telefono) VALUES (?,?,?,?,?,?)";
         Object[][] datos = new Object[][]{
-            {1, "Juan", "Pérez", "12345678", "juan.perez@example.com", "555-1111"},
-            {2, "María", "González", "87654321", "maria.g@example.com", "555-2222"},
-            {3, "Carlos", "López", "45678912", "carlos.l@example.com", "555-3333"}
+                {1, "Juan", "Pérez", "12345678", "juan.perez@example.com", "555-1111"},
+                {2, "María", "Gómez", "23456789", "maria.gomez@example.com", "555-2222"},
+                {3, "Carlos", "Rodríguez", "34567890", "carlos.rodriguez@example.com", "555-3333"},
+                {4, "Lucía", "Fernández", "45678901", "lucia.fernandez@example.com", "555-4444"},
+                {5, "Pedro", "López", "56789012", "pedro.lopez@example.com", "555-5555"},
+                {6, "Ana", "Martínez", "67890123", "ana.martinez@example.com", "555-6666"},
+                {7, "Sofía", "García", "78901234", "sofia.garcia@example.com", "555-7777"},
+                {8, "Diego", "Sánchez", "89012345", "diego.sanchez@example.com", "555-8888"},
+                {9, "Camila", "Díaz", "90123456", "camila.diaz@example.com", "555-9999"},
+                {10, "Joaquín", "Torres", "11223344", "joaquin.torres@example.com", "555-1010"},
+                {11, "Valentina", "Ramírez", "22334455", "valentina.ramirez@example.com", "555-2020"},
+                {12, "Martín", "Flores", "33445566", "martin.flores@example.com", "555-3030"},
+                {13, "Agustina", "Morales", "44556677", "agustina.morales@example.com", "555-4040"},
+                {14, "Ignacio", "Ortiz", "55667788", "ignacio.ortiz@example.com", "555-5050"},
+                {15, "Natalia", "Castro", "66778899", "natalia.castro@example.com", "555-6060"}
         };
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Object[] row : datos) {
@@ -85,4 +97,3 @@ public class HuespedDAO {
         }
     }
 }
-

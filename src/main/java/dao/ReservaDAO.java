@@ -11,8 +11,14 @@ public class ReservaDAO {
     public static void insertSampleData(Connection conn) throws SQLException {
         String sql = "INSERT OR IGNORE INTO reserva (id, fechaInicio, fechaFin, numeroHab, nombre, apellido, dni, email, telefono, estado) VALUES (?,?,?,?,?,?,?,?,?,?)";
         Object[][] datos = new Object[][]{
-            {1, "2025-12-01", "2025-12-05", 101, "Juan", "Perez", "12345678", "juan@example.com", "555-1234", "pendiente"},
-            {2, "2025-11-10", "2025-11-12", 103, "Maria", "Gonzalez", "87654321", "maria@example.com", "555-9876", "pendiente"}
+            {1, "2025-11-08", "2025-11-10", 101, "Juan", "Perez", "12345678", "juan.perez@example.com", "555-1111", "confirmada"},
+            {2, "2025-11-15", "2025-11-18", 103, "Maria", "Gonzalez", "87654321", "maria.g@example.com", "555-2222", "pendiente"},
+            {3, "2025-11-05", "2025-11-07", 102, "Carlos", "Lopez", "45678912", "carlos.l@example.com", "555-3333", "cancelada"},
+            {4, "2025-11-20", "2025-11-22", 105, "Lucia", "Fernandez", "33445566", "lucia.f@example.com", "555-4444", "pendiente"},
+            {5, "2025-12-01", "2025-12-05", 201, "Miguel", "Rodriguez", "44556677", "miguel.r@example.com", "555-5555", "pendiente"},
+            {6, "2025-11-09", "2025-11-10", 103, "Ana", "Martinez", "66778899", "ana.m@example.com", "555-6666", "confirmada"},
+            {7, "2025-11-25", "2025-11-27", 203, "Sofia", "Ramirez", "77889900", "sofia.r@example.com", "555-7777", "pendiente"},
+            {8, "2025-11-10", "2025-11-12", 105, "Pablo", "Gomez", "88990011", "pablo.g@example.com", "555-8888", "pendiente"}
         };
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (Object[] row : datos) {

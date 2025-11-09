@@ -9,9 +9,11 @@ import java.awt.event.ActionEvent;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.sql.SQLException;
 
 public class CheckInOutPanel extends JPanel {
     private ControladorGUI controlador;
+    private Runnable onBack; // callback para volver
 
     private JPanel leftCol; // Check-In
     private JPanel rightCol; // Check-Out
@@ -42,9 +44,26 @@ public class CheckInOutPanel extends JPanel {
         topButtons.add(btnRefresh);
         add(topButtons, BorderLayout.NORTH);
 
+        // Botón volver en el bottom
+        JPanel bottomButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnVolver = new JButton("Volver");
+        btnVolver.addActionListener(e -> {
+            if (onBack != null) onBack.run();
+            else {
+                java.awt.Window w = SwingUtilities.getWindowAncestor(this);
+                if (w instanceof MainFrame) {
+                    ((MainFrame) w).showInicio();
+                }
+            }
+        });
+        bottomButtons.add(btnVolver);
+        add(bottomButtons, BorderLayout.SOUTH);
+
         // Inicializar vista
         refresh();
     }
+
+    public void setOnBack(Runnable r) { this.onBack = r; }
 
     /** Reconstruye la vista desde los datos en memoria (ControladorGUI/Hotel) */
     public void refresh() {
@@ -160,14 +179,6 @@ public class CheckInOutPanel extends JPanel {
 
         row.add(left, BorderLayout.CENTER);
 
-        // Badge
-        JLabel badge = new JLabel(stateBadgeText(estado));
-        badge.setOpaque(true);
-        badge.setBorder(BorderFactory.createEmptyBorder(4,8,4,8));
-        badge.setForeground(Color.WHITE);
-        badge.setBackground(stateBadgeColor(estado));
-        row.add(badge, BorderLayout.WEST);
-
         // Right: botones de acción rápida
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnMarcar = new JButton(tipo == TipoFila.CHECKIN ? "✅ Marcar" : "✅ Marcar");
@@ -186,24 +197,6 @@ public class CheckInOutPanel extends JPanel {
         row.add(actions, BorderLayout.EAST);
 
         return row;
-    }
-
-    private Color stateBadgeColor(EstadoFila s) {
-        return switch (s) {
-            case REALIZADO -> new Color(0x2E7D32); // verde
-            case PROXIMO -> new Color(0xFBC02D); // amarillo
-            case ATRASADO -> new Color(0xC62828); // rojo
-            case EN_TIEMPO -> new Color(0x1976D2); // azul
-        };
-    }
-
-    private String stateBadgeText(EstadoFila s) {
-        return switch (s) {
-            case REALIZADO -> "✅ Realizado";
-            case PROXIMO -> "🟡 Próximo";
-            case ATRASADO -> "🔴 Atrasado";
-            case EN_TIEMPO -> "🔵 En tiempo";
-        };
     }
 
     private String fechaRelativeText(LocalDate fecha) {
@@ -228,6 +221,16 @@ public class CheckInOutPanel extends JPanel {
                 new CheckOut(empleado, r, total);
                 JOptionPane.showMessageDialog(this, "Check-Out realizado correctamente para la reserva #" + r.getIdReserva());
             }
+
+            // Persistir cambios en BD: guardar reserva y actualizar estado de habitación
+            try {
+                controlador.guardarReservaEnDB(r);
+                // actualizar estado habitacion
+                controlador.actualizarEstadoHabitacionEnDB(r.getHabitacion().getNumero(), r.getHabitacion().getEstado());
+            } catch (SQLException sqlEx) {
+                JOptionPane.showMessageDialog(this, "Error guardando cambios en BD: " + sqlEx.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
+            }
+
             refresh();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al marcar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
