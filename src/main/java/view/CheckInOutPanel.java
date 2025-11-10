@@ -1,23 +1,24 @@
-    package view;
+package view;
 
-    import model.entities.*;
+import model.entities.*;
 
 
-    import javax.swing.*;
-    import java.awt.*;
-    import java.time.LocalDate;
-    import java.time.temporal.ChronoUnit;
-    import java.util.List;
-    import java.sql.SQLException;
+import javax.swing.*;
+import java.awt.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.sql.SQLException;
+import controller.HotelController;
 
-    public class CheckInOutPanel extends JPanel {
+public class CheckInOutPanel extends JPanel {
 
-        private ControladorGUI controlador;
+        private HotelController controlador;
         private Runnable onBack; // callback para volver
         private JPanel leftCol; // Check-In
         private JPanel rightCol; // Check-Out
 
-        public CheckInOutPanel(ControladorGUI controlador) {
+        public CheckInOutPanel(HotelController controlador) {
             this.controlador = controlador;
             setLayout(new BorderLayout());
 

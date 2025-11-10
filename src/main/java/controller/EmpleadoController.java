@@ -1,6 +1,6 @@
 package controller;
 
-import view.ControladorGUI;
+import controller.HotelController;
 import model.entities.Empleado;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ public class EmpleadoController {
     public EmpleadoController() {}
 
     /** Inicializa la BD y carga empleados en memoria (delegando a DatabaseInitializer y ControladorGUI). */
-    public void initializeAndLoad(ControladorGUI controlador) throws Exception {
+    public void initializeAndLoad(HotelController controlador) throws Exception {
         DatabaseInitializer.initialize();
         // cargar empleados desde BD a memoria
         try {
@@ -25,7 +25,7 @@ public class EmpleadoController {
     }
 
     /** Retorna filas listas para la tabla en la vista (Id, Nombre, Apellido, DNI, Cargo, Turno, EstadoLabel, EnTurno). */
-    public List<Object[]> getEmpleadoRows(ControladorGUI controlador) {
+    public List<Object[]> getEmpleadoRows(HotelController controlador) {
         List<Object[]> rows = new ArrayList<>();
         for (Empleado e : controlador.getHotel().getEmpleados()) {
             String estadoLabel = e.getEstado() == null ? "" : e.getEstado().getLabel();
@@ -36,12 +36,12 @@ public class EmpleadoController {
     }
 
     // Operaciones CRUD expuestas para las vistas: delegan al ControladorGUI y mantienen validaciones simples
-    public boolean existsByDni(ControladorGUI controlador, String dni) throws SQLException {
+    public boolean existsByDni(HotelController controlador, String dni) throws SQLException {
         List<Empleado> actuales = controlador.cargarEmpleadoDesdeBD();
         return actuales.stream().anyMatch(e -> e.getDni() != null && e.getDni().equalsIgnoreCase(dni));
     }
 
-    public void insertEmpleado(ControladorGUI controlador, Empleado nuevo) throws SQLException {
+    public void insertEmpleado(HotelController controlador, Empleado nuevo) throws SQLException {
         controlador.insertarEmpleadoEnDB(nuevo);
         // refrescar memoria
         var empleados = controlador.cargarEmpleadoDesdeBD();
@@ -49,14 +49,14 @@ public class EmpleadoController {
         for (var emp : empleados) controlador.getHotel().getEmpleados().add(emp);
     }
 
-    public void updateEmpleado(ControladorGUI controlador, Empleado actualizado) throws SQLException {
+    public void updateEmpleado(HotelController controlador, Empleado actualizado) throws SQLException {
         controlador.actualizarEmpleadoEnDB(actualizado);
         var empleados = controlador.cargarEmpleadoDesdeBD();
         controlador.getHotel().getEmpleados().clear();
         for (var emp : empleados) controlador.getHotel().getEmpleados().add(emp);
     }
 
-    public void deleteEmpleado(ControladorGUI controlador, String dni) throws SQLException {
+    public void deleteEmpleado(HotelController controlador, String dni) throws SQLException {
         controlador.eliminarEmpleadoEnDB(dni);
         var empleados = controlador.cargarEmpleadoDesdeBD();
         controlador.getHotel().getEmpleados().clear();

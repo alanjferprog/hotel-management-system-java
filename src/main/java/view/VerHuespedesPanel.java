@@ -2,6 +2,7 @@ package view;
 
 import model.entities.Huesped;
 import controller.HuespedController;
+import controller.HotelController;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.sql.SQLException;
 
 public class VerHuespedesPanel extends JPanel {
-    private ControladorGUI controlador;
+    private HotelController controlador;
     private HuespedController huespedController = new HuespedController();
     private JTable tabla;
     private DefaultTableModel modelo;
@@ -18,7 +19,7 @@ public class VerHuespedesPanel extends JPanel {
     private JButton btnAgregar, btnModificar, btnEliminar;
     private Runnable onBack;
 
-    public VerHuespedesPanel(ControladorGUI controlador) {
+    public VerHuespedesPanel(HotelController controlador) {
         this.controlador = controlador;
         setLayout(new BorderLayout());
 

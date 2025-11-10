@@ -1,14 +1,14 @@
 package view;
 
 import controller.ReservaController;
-import view.ControladorGUI;
+import controller.HotelController;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
 public class VerReservasPanel extends JPanel {
-    private ControladorGUI controlador;
+    private HotelController controlador;
     private ReservaController reservaController = new ReservaController();
     private javax.swing.table.DefaultTableModel modeloReservas;
     private JTable tablaReservas;
@@ -16,7 +16,7 @@ public class VerReservasPanel extends JPanel {
     private JButton btnBuscar, btnMostrarTodos, btnVolver;
     private Runnable onBack;
 
-    public VerReservasPanel(ControladorGUI controlador) {
+    public VerReservasPanel(HotelController controlador) {
         this.controlador = controlador;
         setLayout(new BorderLayout());
 
@@ -86,4 +86,3 @@ public class VerReservasPanel extends JPanel {
         }
     }
 }
-

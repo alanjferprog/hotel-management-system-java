@@ -4,6 +4,7 @@ import javax.swing.JPanel;
 
 import model.entities.Empleado;
 import controller.EmpleadoController;
+import controller.HotelController;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.sql.SQLException;
 
 public class VerEmpleadosPanel extends JPanel {
-    private ControladorGUI controlador;
+    private HotelController controlador;
     private EmpleadoController empleadoController = new EmpleadoController();
     private JTable tabla;
     private DefaultTableModel modelo;
@@ -20,7 +21,7 @@ public class VerEmpleadosPanel extends JPanel {
     private JButton btnAgregar, btnModificar, btnEliminar;
     private Runnable onBack;
 
-    public VerEmpleadosPanel(ControladorGUI controlador) {
+    public VerEmpleadosPanel(HotelController controlador) {
         this.controlador = controlador;
         setLayout(new BorderLayout());
 

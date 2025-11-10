@@ -1,6 +1,6 @@
 package controller;
 
-import view.ControladorGUI;
+import controller.HotelController;
 import model.entities.Huesped;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.sql.SQLException;
 public class HuespedController {
     public HuespedController() {}
 
-    public void initializeAndLoad(ControladorGUI controlador) throws Exception {
+    public void initializeAndLoad(HotelController controlador) throws Exception {
         DatabaseInitializer.initialize();
         try {
             // cargar y no mantener en memoria si el Hotel no tiene lista; pero recargar BD
@@ -19,7 +19,7 @@ public class HuespedController {
         }
     }
 
-    public List<Object[]> getHuespedRows(ControladorGUI controlador) {
+    public List<Object[]> getHuespedRows(HotelController controlador) {
         List<Object[]> rows = new ArrayList<>();
         try {
             List<Huesped> huespedes = controlador.cargarHuespedesDesdeDB();
@@ -32,15 +32,15 @@ public class HuespedController {
         return rows;
     }
 
-    public void insertHuesped(ControladorGUI controlador, Huesped h) throws SQLException {
+    public void insertHuesped(HotelController controlador, Huesped h) throws SQLException {
         controlador.insertarHuespedEnDB(h);
     }
 
-    public void updateHuesped(ControladorGUI controlador, Huesped h) throws SQLException {
+    public void updateHuesped(HotelController controlador, Huesped h) throws SQLException {
         controlador.actualizarHuespedEnDB(h);
     }
 
-    public void deleteHuesped(ControladorGUI controlador, String dni) throws SQLException {
+    public void deleteHuesped(HotelController controlador, String dni) throws SQLException {
         controlador.eliminarHuespedEnDB(dni);
     }
 }

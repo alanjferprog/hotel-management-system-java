@@ -1,6 +1,7 @@
 package view;
 
 import controller.ReservaController;
+import controller.HotelController;
 import model.entities.EstadoHabitacion;
 import model.entities.Empleado;
 
@@ -8,7 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MainFrame extends JFrame {
-    private ControladorGUI controlador;
+    private HotelController controlador;
     private ReservarPanel reservarPanel;
     private VerHabitacionesPanel verPanel;
     private CheckInOutPanel checkinout;
@@ -17,7 +18,7 @@ public class MainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel contentPanel;
 
-    public MainFrame(ControladorGUI controlador) {
+    public MainFrame(HotelController controlador) {
         this.controlador = controlador;
         setTitle("Sistema de Reservas - " + controlador.getHotel().getNombre());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -126,6 +127,8 @@ public class MainFrame extends JFrame {
 
         // Conectar acción de volver desde VerHabitacionesPanel
         verPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
+        // Conectar acción de volver desde VerReservasPanel
+        verReservasPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
         // Conectar acción de volver desde VerHuespedesPanel
         huespedesPanel.setOnBack(() -> cardLayout.show(contentPanel, "INICIO"));
         // Conectar acción de reservar desde VerHabitacionesPanel: mostrar formulario y prefill numero

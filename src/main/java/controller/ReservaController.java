@@ -1,6 +1,6 @@
 package controller;
 
-import view.ControladorGUI;
+import controller.HotelController;
 import model.entities.Reserva;
 
 import java.sql.Connection;
@@ -22,7 +22,7 @@ public class ReservaController {
     /**
      * Inicializa la BD y carga habitaciones y reservas en memoria usando el ControladorGUI.
      */
-    public void initializeAndLoad(ControladorGUI controlador) throws Exception {
+    public void initializeAndLoad(HotelController controlador) throws Exception {
         // Inicializar estructura de BD
         DatabaseInitializer.initialize();
         controlador.cargarHabitacionesDesdeDB();
@@ -35,7 +35,7 @@ public class ReservaController {
      * Si falla, usamos la memoria solo como fallback. Además procesamos fila a fila para evitar que
      * una fila con datos corruptos (fecha inválida) haga fallar toda la lectura.
      */
-    public List<Object[]> getReservationRows(ControladorGUI controlador) {
+    public List<Object[]> getReservationRows(HotelController controlador) {
         List<Object[]> rows = new ArrayList<>();
 
         // Intentar leer desde BD primero (fuente de verdad)
@@ -93,7 +93,7 @@ public class ReservaController {
     /**
      * Busca una reserva por id y retorna Optional<Reserva> (primero memoria, luego BD).
      */
-    public Optional<Reserva> findReservaById(int id, ControladorGUI controlador) {
+    public Optional<Reserva> findReservaById(int id, HotelController controlador) {
         try {
             Optional<Reserva> opt = controlador.buscarReservaPorId(id);
             if (opt.isPresent()) return opt;
@@ -152,7 +152,7 @@ public class ReservaController {
     /**
      * Busca una reserva por id y retorna una fila preparada (Object[]) para la tabla.
      */
-    public Optional<Object[]> findReservationRowById(int id, ControladorGUI controlador) {
+    public Optional<Object[]> findReservationRowById(int id, HotelController controlador) {
         try {
             Optional<Reserva> opt = findReservaById(id, controlador);
             if (opt.isPresent()) {

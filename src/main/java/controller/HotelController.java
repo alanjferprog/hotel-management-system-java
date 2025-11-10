@@ -1,4 +1,4 @@
-package view;
+package controller;
 
 import model.core.*;
 import model.entities.*;
@@ -14,10 +14,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-public class ControladorGUI {
+public class HotelController {
     private Hotel hotel;
 
-    public ControladorGUI(Hotel hotel) {
+    public HotelController(Hotel hotel) {
         this.hotel = hotel;
     }
 
@@ -139,7 +139,7 @@ public class ControladorGUI {
             dao.EmpleadoDAO.insert(conn, e);
         }
     }
-    
+
     public void actualizarEmpleadoEnDB(model.entities.Empleado e) throws java.sql.SQLException {
         try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
             dao.EmpleadoDAO.updateByDni(conn, e);
@@ -293,3 +293,4 @@ public class ControladorGUI {
         return true;
     }
 }
+

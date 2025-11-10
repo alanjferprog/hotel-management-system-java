@@ -15,9 +15,10 @@ import java.awt.event.ActionListener;
 import java.util.EventObject;
 import java.sql.SQLException;
 import controller.HabitacionController;
+import controller.HotelController;
 
 public class VerHabitacionesPanel extends JPanel {
-    private ControladorGUI controlador;
+    private HotelController controlador;
     private HabitacionController habitacionController = new HabitacionController();
     private JTable tabla;
     private DefaultTableModel modelo;
@@ -27,7 +28,7 @@ public class VerHabitacionesPanel extends JPanel {
     private Consumer<Integer> onReservarCallback;
     private Consumer<Integer> onPedirLimpiezaCallback;
 
-    public VerHabitacionesPanel(ControladorGUI controlador) {
+    public VerHabitacionesPanel(HotelController controlador) {
         this.controlador = controlador;
         setLayout(new BorderLayout());
         // Modelo y tabla: columnas Número, Tipo, Precio, Estado, Empleado asignado, Acción, Alta

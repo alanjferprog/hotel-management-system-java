@@ -1,6 +1,6 @@
 package controller;
 
-import view.ControladorGUI;
+import controller.HotelController;
 import model.entities.Habitacion;
 import model.entities.EstadoHabitacion;
 import model.entities.Empleado;
@@ -18,7 +18,7 @@ public class HabitacionController {
     public HabitacionController() {}
 
     /** Devuelve filas listas para la tabla de habitaciones. */
-    public List<Object[]> getHabitacionRows(ControladorGUI controlador) {
+    public List<Object[]> getHabitacionRows(HotelController controlador) {
         List<Object[]> rows = new ArrayList<>();
         List<Habitacion> habitaciones = controlador.getHotel().getHabitaciones();
         for (Habitacion h : habitaciones) {
@@ -52,7 +52,7 @@ public class HabitacionController {
     }
 
     /** Retorna lista de empleados filtrados por cargo y por si están en turno. */
-    public List<Empleado> listarEmpleadosPorCargoYTurno(ControladorGUI controlador, String cargoContains) {
+    public List<Empleado> listarEmpleadosPorCargoYTurno(HotelController controlador, String cargoContains) {
         List<Empleado> result = new ArrayList<>();
         for (Empleado emp : controlador.getHotel().getEmpleados()) {
             if (emp.getCargo() != null && emp.getCargo().toLowerCase().contains(cargoContains.toLowerCase()) && controlador.estaEmpleadoEnTurno(emp)) {
@@ -63,28 +63,27 @@ public class HabitacionController {
     }
 
     /** Asigna un empleado (dni) a una habitación y marca empleado ocupado (persistencia via ControladorGUI). */
-    public void asignarEmpleado(ControladorGUI controlador, int numero, String dni) throws SQLException {
+    public void asignarEmpleado(HotelController controlador, int numero, String dni) throws SQLException {
         controlador.asignarEmpleadoAHabitacion(numero, dni);
     }
 
     /** Marcar habitación como en_reparacion y persistir. */
-    public void darDeBaja(ControladorGUI controlador, int numero) throws SQLException {
+    public void darDeBaja(HotelController controlador, int numero) throws SQLException {
         controlador.getHotel().buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEstado(EstadoHabitacion.EN_REPARACION));
         controlador.actualizarEstadoHabitacionEnDB(numero, EstadoHabitacion.EN_REPARACION.getDbValue());
     }
 
     /** Marcar habitación como disponible y liberar empleado asignado. */
-    public void darDeAlta(ControladorGUI controlador, int numero) throws SQLException {
+    public void darDeAlta(HotelController controlador, int numero) throws SQLException {
         controlador.getHotel().buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEstado(EstadoHabitacion.DISPONIBLE));
         controlador.actualizarEstadoHabitacionEnDB(numero, EstadoHabitacion.DISPONIBLE.getDbValue());
         controlador.liberarEmpleadoPorHabitacion(numero);
     }
 
     /** Reservar: delega a ControladorGUI.crearReserva y persistir via guardarReservaEnDB */
-    public model.entities.Reserva crearYGuardarReserva(ControladorGUI controlador, java.time.LocalDate inicio, java.time.LocalDate fin, int numeroHab, model.entities.Huesped huesped, model.entities.Empleado empleado) throws Exception {
+    public model.entities.Reserva crearYGuardarReserva(HotelController controlador, java.time.LocalDate inicio, java.time.LocalDate fin, int numeroHab, model.entities.Huesped huesped, model.entities.Empleado empleado) throws Exception {
         model.entities.Reserva r = controlador.crearReserva(inicio, fin, numeroHab, huesped, empleado);
         controlador.guardarReservaEnDB(r);
         return r;
     }
 }
-

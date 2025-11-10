@@ -2,7 +2,7 @@ package app;
 
 import model.core.Hotel;
 import model.entities.Habitacion;
-import view.ControladorGUI;
+import controller.HotelController;
 import view.MainFrame;
 import javax.swing.SwingUtilities;
 import controller.DatabaseInitializer;
@@ -29,7 +29,7 @@ public class Main {
                 System.err.println("No se pudo cargar habitaciones desde DB: " + ex.getMessage());
             }
 
-            ControladorGUI controlador = new ControladorGUI(hotel);
+            HotelController controlador = new HotelController(hotel);
             MainFrame frame = new MainFrame(controlador);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
