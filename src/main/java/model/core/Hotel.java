@@ -79,6 +79,4 @@ public class Hotel {
         r.confirmar();
     }
 
-    // NOTE: Removed CSV-loading helper methods. Data should be loaded via a database layer (SQLite) or through
-    // explicit repository/DAO classes. Keep the in-memory lists above for runtime operations.
 }

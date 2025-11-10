@@ -9,7 +9,6 @@ import dao.EmpleadoDAO;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.ResultSet;
 
 
 public class DatabaseInitializer {
@@ -74,95 +73,50 @@ public class DatabaseInitializer {
             """;
             stmt.execute(sqlCreateEmp);
 
-            // Migración ligera: si la tabla empleado existe pero no tiene columna 'estado', agregarla
-            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(empleado);")) {
-                boolean tieneEstado = false;
-                while (rs.next()) {
-                    String col = rs.getString("name");
-                    if (col != null && col.equalsIgnoreCase("estado")) { tieneEstado = true; break; }
-                }
-                if (!tieneEstado) {
-                    try (Statement s2 = conn.createStatement()) {
-                        s2.executeUpdate("ALTER TABLE empleado ADD COLUMN estado TEXT NOT NULL DEFAULT 'disponible';");
-                        System.out.println("Database migration: se agregó columna 'estado' a empleado");
-                    } catch (SQLException ex) {
-                        System.err.println("No se pudo agregar columna 'estado' a empleado: " + ex.getMessage());
-                    }
-                }
-            } catch (SQLException ignore) {
-                // si falla, no interrumpir la inicialización
-            }
-
-            // Migración ligera: si la tabla habitacion no tiene columna empleadoAsignado, agregarla
-            try (ResultSet rs2 = stmt.executeQuery("PRAGMA table_info(habitacion);")) {
-                boolean tieneEmpleadoAsignado = false;
-                while (rs2.next()) {
-                    String col = rs2.getString("name");
-                    if (col != null && col.equalsIgnoreCase("empleadoAsignado")) { tieneEmpleadoAsignado = true; break; }
-                }
-                if (!tieneEmpleadoAsignado) {
-                    try (Statement s3 = conn.createStatement()) {
-                        s3.executeUpdate("ALTER TABLE habitacion ADD COLUMN empleadoAsignado TEXT NULL;");
-                        System.out.println("Database migration: se agregó columna 'empleadoAsignado' a habitacion");
-                    } catch (SQLException ex) {
-                        System.err.println("No se pudo agregar columna 'empleadoAsignado' a habitacion: " + ex.getMessage());
-                    }
-                }
-            } catch (SQLException ignore) {
-                // ignorar
-            }
-
             // 5) Insertar datos de ejemplo solo si la tabla está vacía
             try {
                 if (tableIsEmpty(conn, "habitacion")) {
                     HabitacionDAO.insertSampleData(conn);
-                    System.out.println("Datos de ejemplo (habitaciones) insertados en la BD.");
-                } else {
-                    System.out.println("Tabla 'habitacion' ya tiene datos, no insertar ejemplos.");
                 }
             } catch (SQLException ex) {
-                System.err.println("No se pudieron insertar datos de ejemplo (habitaciones): " + ex.getMessage());
+                System.err.println("Error insertando datos de ejemplo en 'habitacion': " + ex.getMessage());
+                ex.printStackTrace();
             }
 
             try {
                 if (tableIsEmpty(conn, "reserva")) {
                     ReservaDAO.insertSampleData(conn);
-                    System.out.println("Datos de ejemplo (reservas) insertados en la BD.");
-                } else {
-                    System.out.println("Tabla 'reserva' ya tiene datos, no insertar ejemplos.");
                 }
             } catch (SQLException ex) {
-                System.err.println("No se pudieron insertar datos de ejemplo (reservas): " + ex.getMessage());
+                System.err.println("Error insertando datos de ejemplo en 'reserva': " + ex.getMessage());
+                ex.printStackTrace();
             }
 
             try {
                 if (tableIsEmpty(conn, "empleado")) {
                     EmpleadoDAO.insertSampleData(conn);
-                    System.out.println("Datos de ejemplo (empleados) insertados en la BD.");
-                } else {
-                    System.out.println("Tabla 'empleado' ya tiene datos, no insertar ejemplos.");
                 }
             } catch (SQLException ex) {
-                System.err.println("No se pudieron insertar datos de ejemplo (empleados): " + ex.getMessage());
+                System.err.println("Error insertando datos de ejemplo en 'empleado': " + ex.getMessage());
+                ex.printStackTrace();
             }
 
             try {
                 if (tableIsEmpty(conn, "cliente")) {
                     HuespedDAO.insertSampleData(conn);
-                    System.out.println("Datos de ejemplo (huespedes) insertados en la BD.");
-                } else {
-                    System.out.println("Tabla 'cliente' ya tiene datos, no insertar ejemplos.");
                 }
             } catch (SQLException ex) {
-                System.err.println("No se pudieron insertar datos de ejemplo (huespedes): " + ex.getMessage());
+                System.err.println("Error insertando datos de ejemplo en 'cliente': " + ex.getMessage());
+                ex.printStackTrace();
             }
 
         } catch (SQLException e) {
-            System.err.println("❌ Error inicializando la BD: " + e.getMessage());
+            System.err.println("Error inicializando la base de datos: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
+    //Verifica si una tabla está vacía, se usa para decidir si insertar datos de ejemplo
     private static boolean tableIsEmpty(Connection conn, String tableName) {
         String sql = "SELECT COUNT(*) AS cnt FROM " + tableName;
         try (var ps = conn.prepareStatement(sql); var rs = ps.executeQuery()) {
@@ -170,8 +124,8 @@ public class DatabaseInitializer {
                 return rs.getInt("cnt") == 0;
             }
         } catch (SQLException ex) {
-            // si hay error (por ejemplo tabla no existe), consideramos que está vacía y dejamos que el caller cree y/o inserte
-            System.err.println("No se pudo verificar si la tabla " + tableName + " está vacía: " + ex.getMessage());
+            System.err.println("No se pudo verificar si la tabla '" + tableName + "' está vacía: " + ex.getMessage());
+            ex.printStackTrace();
             return true;
         }
         return true;

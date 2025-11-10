@@ -10,7 +10,6 @@ import java.util.Optional;
 // Nuevos imports para BD
 import bdd.ConexionSQLite;
 import dao.HabitacionDAO;
-import dao.ReservaDAO; // nota: existe ReservaDAO (insert), pero necesitaremos un reader - crearé uno si hace falta
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;

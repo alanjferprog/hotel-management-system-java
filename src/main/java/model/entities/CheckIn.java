@@ -17,4 +17,7 @@ public class CheckIn {
     public LocalDateTime getFechaHora() { return fechaHora; }
     public Empleado getEmpleado() { return empleado; }
     public Reserva getReserva() { return reserva; }
+
+
+
 }

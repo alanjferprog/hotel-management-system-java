@@ -1,5 +1,6 @@
 package view;
 
+import controller.ReservaController;
 import model.entities.EstadoHabitacion;
 import model.entities.Empleado;
 
@@ -15,9 +16,6 @@ public class MainFrame extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel contentPanel;
-
-    // instancia lazy del diálogo de búsqueda de reservas
-    private BuscarReservaDialog buscarReservaDialog = null;
 
     public MainFrame(ControladorGUI controlador) {
         this.controlador = controlador;
@@ -206,12 +204,31 @@ public class MainFrame extends JFrame {
         });
 
         btnVerReserva.addActionListener(e -> {
-            // Crear el diálogo solo cuando se necesite (lazy)
-            if (buscarReservaDialog == null) {
-                buscarReservaDialog = new BuscarReservaDialog(this, controlador);
+            // Dialogo rápido para buscar por ID usando ReservaController (MVC)
+            String input = JOptionPane.showInputDialog(this, "Ingrese el ID de la reserva:");
+            if (input == null) return; // cancel
+            input = input.trim();
+            if (input.isEmpty()) { JOptionPane.showMessageDialog(this, "ID vacío", "Info", JOptionPane.INFORMATION_MESSAGE); return; }
+            try {
+                int id = Integer.parseInt(input);
+                ReservaController rc = new ReservaController();
+                var optRow = rc.findReservationRowById(id, controlador);
+                if (optRow.isPresent()) {
+                    Object[] row = optRow.get();
+                    // Mostrar en una tabla simple
+                    javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(new Object[]{"ID","Huésped","Hab","Inicio","Fin","Estado"}, 0) {
+                        @Override public boolean isCellEditable(int r, int c) { return false; }
+                    };
+                    model.addRow(row);
+                    JTable t = new JTable(model);
+                    t.removeColumn(t.getColumnModel().getColumn(0)); // ocultar id visualmente
+                    JOptionPane.showMessageDialog(this, new JScrollPane(t), "Reserva encontrada", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Reserva no encontrada: " + id, "Info", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (NumberFormatException nfe) {
+                JOptionPane.showMessageDialog(this, "ID inválido", "Error", JOptionPane.ERROR_MESSAGE);
             }
-            buscarReservaDialog.setLocationRelativeTo(this);
-            buscarReservaDialog.setVisible(true);
         });
 
         btnCheckInOut.addActionListener(e -> {

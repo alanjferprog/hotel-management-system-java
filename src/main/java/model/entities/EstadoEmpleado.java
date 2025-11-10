@@ -1,8 +1,10 @@
 package model.entities;
 
+//Usamos esta clase para definir los estados posibles de un empleado y evitar errores de tipeo
 public enum EstadoEmpleado {
     DISPONIBLE("disponible", "Disponible"),
     OCUPADO("ocupado", "Ocupado");
+
 
     private final String dbValue;
     private final String label;

@@ -1,16 +1,17 @@
 package view;
 
 import model.entities.Huesped;
-import controller.DatabaseInitializer;
+import controller.HuespedController;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
 import java.util.List;
+import java.sql.SQLException;
 
 public class VerHuespedesPanel extends JPanel {
     private ControladorGUI controlador;
+    private HuespedController huespedController = new HuespedController();
     private JTable tabla;
     private DefaultTableModel modelo;
     private JButton btnVolver;
@@ -22,8 +23,7 @@ public class VerHuespedesPanel extends JPanel {
         setLayout(new BorderLayout());
 
         modelo = new DefaultTableModel(new Object[]{"Nombre","Apellido","DNI","Email","Telefono"},0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         tabla = new JTable(modelo);
         tabla.setFillsViewportHeight(true);
@@ -41,7 +41,6 @@ public class VerHuespedesPanel extends JPanel {
         bottom.add(btnVolver);
         add(bottom, BorderLayout.SOUTH);
 
-        // listeners básicos: abriremos diálogos simples
         btnVolver.addActionListener(e -> { if (onBack!=null) onBack.run(); else { Window w = SwingUtilities.getWindowAncestor(this); if (w instanceof MainFrame) ((MainFrame)w).showInicio(); } });
 
         btnAgregar.addActionListener(e -> onAgregar());
@@ -56,36 +55,49 @@ public class VerHuespedesPanel extends JPanel {
         boolean retried = false;
         while (true) {
             try {
-                List<Huesped> clientes = controlador.cargarHuespedesDesdeDB();
-                for (Huesped h : clientes) {
-                    modelo.addRow(new Object[]{h.getNombre(), h.getApellido(), h.getDni(), h.getEmail(), h.getTelefono()});
+                List<Object[]> rows = huespedController.getHuespedRows(controlador);
+                if (!rows.isEmpty()) {
+                    for (Object[] row : rows) modelo.addRow(row);
+                    return;
+                }
+                if (!retried) {
+                    try {
+                        huespedController.initializeAndLoad(controlador);
+                        retried = true;
+                        continue;
+                    } catch (Exception ie) {
+                        JOptionPane.showMessageDialog(this, "No se pudieron crear tablas o cargar huéspedes: " + ie.getMessage());
+                        return;
+                    }
                 }
                 return;
             } catch (Exception ex) {
-                if (!retried && isNoSuchTable(ex)) {
-                    try { DatabaseInitializer.initialize(); retried = true; continue; } catch (Exception ie) { JOptionPane.showMessageDialog(this, "No se pudieron crear tablas: " + ie.getMessage()); return; }
-                }
                 JOptionPane.showMessageDialog(this, "No se pudieron cargar huespedes: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
         }
     }
 
-    private boolean isNoSuchTable(Throwable ex) {
-        if (ex==null) return false;
-        String m = ex.getMessage(); if (m!=null && m.toLowerCase().contains("no such table")) return true; return isNoSuchTable(ex.getCause());
-    }
-
     private void onAgregar() {
-        HuespedFormDialog dlg = new HuespedFormDialog(SwingUtilities.getWindowAncestor(this), null);
-        dlg.setVisible(true);
-        if (dlg.isOk()) {
-            try {
-                controlador.insertarHuespedEnDB(dlg.getHuesped());
-                refresh();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error al insertar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        JTextField tfNombre = new JTextField();
+        JTextField tfApellido = new JTextField();
+        JTextField tfDni = new JTextField();
+        JTextField tfEmail = new JTextField();
+        JTextField tfTelefono = new JTextField();
+        JPanel panel = new JPanel(new GridLayout(0,2,6,6));
+        panel.add(new JLabel("Nombre:")); panel.add(tfNombre);
+        panel.add(new JLabel("Apellido:")); panel.add(tfApellido);
+        panel.add(new JLabel("DNI:")); panel.add(tfDni);
+        panel.add(new JLabel("Email:")); panel.add(tfEmail);
+        panel.add(new JLabel("Telefono:")); panel.add(tfTelefono);
+        int res = JOptionPane.showConfirmDialog(this, panel, "Agregar huésped", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (res != JOptionPane.OK_OPTION) return;
+        Huesped nuevo = new Huesped(tfNombre.getText().trim(), tfApellido.getText().trim(), tfDni.getText().trim(), tfEmail.getText().trim(), tfTelefono.getText().trim());
+        try {
+            huespedController.insertHuesped(controlador, nuevo);
+            refresh();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al insertar: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -97,16 +109,25 @@ public class VerHuespedesPanel extends JPanel {
         String apellido = String.valueOf(modelo.getValueAt(sel,1));
         String email = String.valueOf(modelo.getValueAt(sel,3));
         String telefono = String.valueOf(modelo.getValueAt(sel,4));
-        Huesped actual = new Huesped(nombre, apellido, dni, email, telefono);
-        HuespedFormDialog dlg = new HuespedFormDialog(SwingUtilities.getWindowAncestor(this), actual);
-        dlg.setVisible(true);
-        if (dlg.isOk()) {
-            try {
-                controlador.actualizarHuespedEnDB(dlg.getHuesped());
-                refresh();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error al modificar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        JTextField tfNombre = new JTextField(nombre);
+        JTextField tfApellido = new JTextField(apellido);
+        JTextField tfDni = new JTextField(dni);
+        JTextField tfEmail = new JTextField(email);
+        JTextField tfTelefono = new JTextField(telefono);
+        JPanel panel = new JPanel(new GridLayout(0,2,6,6));
+        panel.add(new JLabel("Nombre:")); panel.add(tfNombre);
+        panel.add(new JLabel("Apellido:")); panel.add(tfApellido);
+        panel.add(new JLabel("DNI:")); panel.add(tfDni);
+        panel.add(new JLabel("Email:")); panel.add(tfEmail);
+        panel.add(new JLabel("Telefono:")); panel.add(tfTelefono);
+        int res = JOptionPane.showConfirmDialog(this, panel, "Modificar huésped", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (res != JOptionPane.OK_OPTION) return;
+        Huesped actualizado = new Huesped(tfNombre.getText().trim(), tfApellido.getText().trim(), tfDni.getText().trim(), tfEmail.getText().trim(), tfTelefono.getText().trim());
+        try {
+            huespedController.updateHuesped(controlador, actualizado);
+            refresh();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al modificar: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -116,7 +137,7 @@ public class VerHuespedesPanel extends JPanel {
         String dni = String.valueOf(modelo.getValueAt(sel,2));
         if (JOptionPane.showConfirmDialog(this, "¿Eliminar huésped con DNI " + dni + "?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
-                controlador.eliminarHuespedEnDB(dni);
+                huespedController.deleteHuesped(controlador, dni);
                 refresh();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

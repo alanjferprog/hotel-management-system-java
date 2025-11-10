@@ -11,11 +11,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.LocalDate;
 import java.sql.SQLException; // añadido
-import controller.DatabaseInitializer;
-import bdd.ConexionSQLite;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import controller.ReservaController;
+import controller.HabitacionController;
 
 public class ReservarPanel extends JPanel {
     private ControladorGUI controlador;
@@ -31,6 +28,8 @@ public class ReservarPanel extends JPanel {
     private javax.swing.table.DefaultTableModel modeloReservas;
     private JTextField tfBuscarId;
     private JButton btnBuscar, btnMostrarTodos;
+    private ReservaController reservaController = new ReservaController();
+    private HabitacionController habitacionController = new HabitacionController();
 
     public ReservarPanel(ControladorGUI controlador) {
         this.controlador = controlador;
@@ -189,32 +188,29 @@ public class ReservarPanel extends JPanel {
                 controlador.getHotel().agregarEmpleado(e);
             }
 
-            Reserva r = controlador.crearReserva(inicio, fin, numeroHab, h, e);
-
-            // Persistir en BD
+            // Usar HabitacionController para crear y persistir la reserva (MVC: vista -> controller -> ControladorGUI)
             try {
-                controlador.guardarReservaEnDB(r);
+                Reserva r = habitacionController.crearYGuardarReserva(controlador, inicio, fin, numeroHab, h, e);
                 // Actualizar tabla de reservas
                 refreshReservations();
 
-                // Mostrar componente de éxito con el número de reserva
+                // Mensaje de éxito y volver al inicio
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(this,
                             "Reserva realizada con éxito, su nro de reserva es: #" + r.getIdReserva(),
                             "Reserva exitosa",
                             JOptionPane.INFORMATION_MESSAGE);
-                    // Refrescar tabla de habitaciones en MainFrame si está presente
                     java.awt.Window w = SwingUtilities.getWindowAncestor(this);
                     if (w instanceof MainFrame) {
                         ((MainFrame) w).refresh();
-                        // Volver al menú principal
                         ((MainFrame) w).showInicio();
                     }
                 });
 
                 // limpiar formulario tras el éxito
                 limpiarFormulario();
-
+            } catch (HabitacionNoDisponibleException | ReservaInvalidaException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "No es posible reservar", JOptionPane.WARNING_MESSAGE);
             } catch (SQLException sqle) {
                 JOptionPane.showMessageDialog(this, "Error al guardar en DB: " + sqle.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
             }
@@ -235,58 +231,17 @@ public class ReservarPanel extends JPanel {
     private void refreshReservations() {
         modeloReservas.setRowCount(0);
         try {
-            // Asegurar que la BD y tablas estén inicializadas (crea tablas y ejemplos si es necesario)
+            // Delegar a ReservaController: inicializar y obtener filas (usa memoria o BD según corresponda)
             try {
-                DatabaseInitializer.initialize();
+                reservaController.initializeAndLoad(controlador);
             } catch (Exception initEx) {
+                // advertir pero continuar con lo que haya en memoria
                 System.err.println("Advertencia: no se pudo inicializar la BD: " + initEx.getMessage());
             }
-            // Intentar cargar habitaciones y luego reservas desde BD si hay conexión
-            int habCount = 0;
-            int resCount = 0;
-            try {
-                habCount = controlador.cargarHabitacionesDesdeDB();
-                System.out.println("Habitaciones cargadas desde DB (refreshReservations): " + habCount);
-            } catch (SQLException ex) {
-                // no fue posible cargar habitaciones desde BD; seguimos con lo que haya en memoria
-                System.err.println("No se pudieron cargar habitaciones desde BD: " + ex.getMessage());
-            }
-            try {
-                resCount = controlador.cargarReservasDesdeDB();
-                System.out.println("Reservas cargadas desde DB (refreshReservations): " + resCount);
-            } catch (SQLException sq) {
-                // ignorar: si falla, intentaremos usar las reservas en memoria
-                System.err.println("No se pudieron cargar reservas desde BD: " + sq.getMessage());
-            }
 
-            for (Reserva r : controlador.getHotel().getReservas()) {
-                modeloReservas.addRow(new Object[]{r.getIdReserva(), r.getHuesped().getNombre() + " " + r.getHuesped().getApellido(), r.getHabitacion().getNumero(), r.getFechaInicio(), r.getFechaFin(), r.getEstado()});
-            }
-
-            if (controlador.getHotel().getReservas().isEmpty()) {
-                // Aviso al usuario para diagnóstico
-                System.out.println("No se encontraron reservas en memoria tras la carga.");
-                // Fallback: leer directamente de la tabla reserva y mostrar lo que haya, sin mapear a Habitacion/Reserva en memoria
-                try (Connection conn = ConexionSQLite.conectar()) {
-                    String sql = "SELECT id, nombre, apellido, numeroHab, fechaInicio, fechaFin, estado FROM reserva ORDER BY id";
-                    try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-                        boolean any = false;
-                        while (rs.next()) {
-                            any = true;
-                            int id = rs.getInt("id");
-                            String nombre = rs.getString("nombre");
-                            String apellido = rs.getString("apellido");
-                            int numeroHab = rs.getInt("numeroHab");
-                            String inicio = rs.getString("fechaInicio");
-                            String fin = rs.getString("fechaFin");
-                            String estado = rs.getString("estado");
-                            modeloReservas.addRow(new Object[]{id, (nombre==null?"":nombre) + " " + (apellido==null?"":apellido), numeroHab, inicio, fin, estado});
-                        }
-                        if (!any) System.out.println("Fallback DB: tampoco se encontraron filas en la tabla reserva.");
-                    }
-                } catch (Exception dbex) {
-                    System.err.println("Fallback DB: error leyendo tabla reserva: " + dbex.getMessage());
-                }
+            var rows = reservaController.getReservationRows(controlador);
+            if (!rows.isEmpty()) {
+                for (Object[] row : rows) modeloReservas.addRow(row);
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "No se pudieron cargar reservas: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -298,14 +253,11 @@ public class ReservarPanel extends JPanel {
         if (s.isEmpty()) { JOptionPane.showMessageDialog(this, "Ingrese un ID"); return; }
         try {
             int id = Integer.parseInt(s);
-            // Asegurarse de tener los datos en memoria
-            try { controlador.cargarReservasDesdeDB(); } catch (SQLException sq) { /* ignore */ }
-            var opt = controlador.buscarReservaPorId(id);
-            if (opt.isPresent()) {
-                Reserva r = opt.get();
-                // Mostrar solo esa reserva en la tabla
+            // Buscar usando ReservaController (primero memoria, luego BD)
+            var optRow = reservaController.findReservationRowById(id, controlador);
+            if (optRow.isPresent()) {
                 modeloReservas.setRowCount(0);
-                modeloReservas.addRow(new Object[]{r.getIdReserva(), r.getHuesped().getNombre() + " " + r.getHuesped().getApellido(), r.getHabitacion().getNumero(), r.getFechaInicio(), r.getFechaFin(), r.getEstado()});
+                modeloReservas.addRow(optRow.get());
             } else {
                 JOptionPane.showMessageDialog(this, "Reserva no encontrada: " + id);
             }

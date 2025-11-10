@@ -14,9 +14,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EventObject;
 import java.sql.SQLException;
+import controller.HabitacionController;
 
 public class VerHabitacionesPanel extends JPanel {
     private ControladorGUI controlador;
+    private HabitacionController habitacionController = new HabitacionController();
     private JTable tabla;
     private DefaultTableModel modelo;
     private JButton btnVolver;
@@ -80,11 +82,7 @@ public class VerHabitacionesPanel extends JPanel {
         if (r != JOptionPane.YES_OPTION) return;
 
         // Pedir asignación a personal de mantenimiento (opcional)
-        java.util.List<model.entities.Empleado> empleados = controlador.getHotel().getEmpleados();
-        java.util.List<model.entities.Empleado> mantenimiento = new java.util.ArrayList<>();
-        for (model.entities.Empleado emp : empleados) {
-            if (emp.getCargo() != null && emp.getCargo().toLowerCase().contains("mantenimiento") && controlador.estaEmpleadoEnTurno(emp)) mantenimiento.add(emp);
-        }
+        java.util.List<model.entities.Empleado> mantenimiento = habitacionController.listarEmpleadosPorCargoYTurno(controlador, "mantenimiento");
         String[] opciones;
         if (mantenimiento.isEmpty()) {
             opciones = new String[] { "No asignar" };
@@ -95,24 +93,23 @@ public class VerHabitacionesPanel extends JPanel {
         }
         String elegido = (String) JOptionPane.showInputDialog(this, "Asignar tarea de reparación a:", "Asignar mantenimiento", JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
 
-        // Si se seleccionó un empleado de mantenimiento, marcarlo como ocupado y persistir
+        // Si se seleccionó un empleado de mantenimiento, marcarlo como ocupado y persistir (via controller)
         if (elegido != null && !"No asignar".equals(elegido) && !mantenimiento.isEmpty()) {
             int idx = java.util.Arrays.asList(opciones).indexOf(elegido) - 1; // opciones[0] = No asignar
             if (idx >= 0 && idx < mantenimiento.size()) {
                 model.entities.Empleado emp = mantenimiento.get(idx);
                 try {
-                    controlador.asignarEmpleadoAHabitacion(numero, emp.getDni());
+                    habitacionController.asignarEmpleado(controlador, numero, emp.getDni());
                 } catch (java.sql.SQLException ex) {
                     JOptionPane.showMessageDialog(this, "No se pudo asignar el empleado a la habitacion: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }
 
-        // Marcar habitacion como en_reparacion en memoria y persistir
-        controlador.getHotel().buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEstado(EstadoHabitacion.EN_REPARACION));
+        // Marcar habitacion como en_reparacion en memoria y persistir via controller
         try {
-            controlador.actualizarEstadoHabitacionEnDB(numero, EstadoHabitacion.EN_REPARACION.getDbValue());
-        } catch (java.sql.SQLException ex) {
+            habitacionController.darDeBaja(controlador, numero);
+        } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error al actualizar BD: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
         }
         refresh();
@@ -140,36 +137,10 @@ public class VerHabitacionesPanel extends JPanel {
     }
 
     public void refresh() {
-        // Llenar el modelo de la tabla con las habitaciones
-        List<Habitacion> habitaciones = controlador.getHotel().getHabitaciones();
+        // Delegar la construcción de filas al controller
         modelo.setRowCount(0);
-        for (Habitacion h : habitaciones) {
-            String accion = "Reservar";
-            EstadoHabitacion estado = h.getEstado();
-            if (EstadoHabitacion.PENDIENTE_LIMPIEZA.equals(estado)) {
-                accion = "Pedir limpieza"; // acción disponible para solicitar limpieza
-            } else if (EstadoHabitacion.LIMPIEZA_PEDIDA.equals(estado)) {
-                accion = "Limpieza pedida"; // ya solicitada -> deshabilitar botón
-            } else if (EstadoHabitacion.EN_REPARACION.equals(estado)) {
-                accion = "No disponible";
-            } else if (!EstadoHabitacion.DISPONIBLE.equals(estado)) {
-                // ocupado u otros estados
-                accion = "No disponible";
-            }
-            String alta = (EstadoHabitacion.DISPONIBLE.equals(estado)) ? "" : "Dar de alta";
-            // buscar nombre del empleado asignado (si hay dni)
-            String empleadoNombre = "";
-            String dniAsignado = h.getEmpleadoAsignado();
-            if (dniAsignado != null && !dniAsignado.isBlank()) {
-                for (model.entities.Empleado emp : controlador.getHotel().getEmpleados()) {
-                    if (emp.getDni() != null && emp.getDni().equals(dniAsignado)) {
-                        empleadoNombre = emp.getNombre() + " " + emp.getApellido();
-                        break;
-                    }
-                }
-            }
-            modelo.addRow(new Object[] { h.getNumero(), h.getTipo(), h.getPrecioPorNoche(), estado.getLabel(), empleadoNombre, accion, alta });
-        }
+        List<Object[]> rows = habitacionController.getHabitacionRows(controlador);
+        for (Object[] row : rows) modelo.addRow(row);
     }
 
     // Renderer para botón principal (Acción)
@@ -328,17 +299,8 @@ public class VerHabitacionesPanel extends JPanel {
         @Override
         public void actionPerformed(ActionEvent e) {
             int numero = (int) tabla.getValueAt(fila, 0);
-            controlador.getHotel().buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEstado(EstadoHabitacion.DISPONIBLE));
             try {
-                controlador.actualizarEstadoHabitacionEnDB(numero, EstadoHabitacion.DISPONIBLE.getDbValue());
-                // liberar empleado asignado (si corresponde)
-                try {
-                    controlador.liberarEmpleadoPorHabitacion(numero);
-                    // refrescar panel de empleados si está visible
-                } catch (java.sql.SQLException ex2) {
-                    // mostrar pero no detener
-                    JOptionPane.showMessageDialog(VerHabitacionesPanel.this, "Aviso: no se pudo liberar empleado asignado: " + ex2.getMessage(), "Aviso", JOptionPane.WARNING_MESSAGE);
-                }
+                habitacionController.darDeAlta(controlador, numero);
             } catch (SQLException ex) {
                 JOptionPane.showMessageDialog(VerHabitacionesPanel.this, "Error al actualizar BD: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
             }

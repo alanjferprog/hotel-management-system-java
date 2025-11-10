@@ -13,8 +13,9 @@ public class CheckOut {
         this.empleado = empleado;
         this.reserva = reserva;
         this.totalConsumido = totalConsumido;
+
         // marcar reserva como cancelada (checkout) pero no poner la habitación disponible;
-        // en su lugar marcamos la habitación como pendiente de limpieza para housekeeping.
+        // en su lugar marcamos la habitación como pendiente
         reserva.cancelar();
         if (reserva.getHabitacion() != null) {
             reserva.getHabitacion().setEstado(EstadoHabitacion.PENDIENTE_LIMPIEZA);
