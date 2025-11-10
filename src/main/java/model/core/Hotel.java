@@ -69,7 +69,7 @@ public class Hotel {
         reservas.add(r);
         huesped.addReserva(r);
         // Marcar habitación como ocupada en memoria para bloquear nuevas reservas
-        hab.setEstado("ocupada");
+        hab.setEstado(EstadoHabitacion.OCUPADA);
         return r;
     }
 

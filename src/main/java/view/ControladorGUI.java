@@ -146,6 +146,26 @@ public class ControladorGUI {
         }
     }
 
+    /** Actualiza solamente el estado de un empleado tanto en BD como en memoria */
+    public void actualizarEstadoEmpleadoEnDB(String dni, String estado) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.EmpleadoDAO.updateEstadoByDni(conn, dni, estado);
+        }
+        // actualizar en memoria si existe
+        for (model.entities.Empleado e : hotel.getEmpleados()) {
+            if (e.getDni() != null && e.getDni().equals(dni)) {
+                try {
+                    java.lang.reflect.Field f = e.getClass().getDeclaredField("estado");
+                    f.setAccessible(true);
+                    f.set(e, model.entities.EstadoEmpleado.fromString(estado));
+                } catch (Exception ex) {
+                    // si falla la reflexión, ignoramos (se actualizará cuando se recargue desde BD)
+                }
+                break;
+            }
+        }
+    }
+
 
     /**
      * Carga huespedes desde la BD y devuelve la lista de Huesped
@@ -172,5 +192,98 @@ public class ControladorGUI {
         try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
             dao.HuespedDAO.deleteByDni(conn, dni);
         }
+    }
+
+    /** Asigna un empleado (dni) a una habitación: persiste la asignación y marca al empleado como ocupado. */
+    public void asignarEmpleadoAHabitacion(int numero, String dni) throws java.sql.SQLException {
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            // intentar actualizar columna empleadoAsignado (si existe)
+            try {
+                dao.HabitacionDAO.updateEmpleadoAsignado(conn, numero, dni);
+            } catch (Exception ex) {
+                // ignorar si la columna no existe
+            }
+            // marcar empleado como ocupado
+            dao.EmpleadoDAO.updateEstadoByDni(conn, dni, "ocupado");
+        }
+        // actualizar memoria
+        hotel.buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEmpleadoAsignado(dni));
+        for (model.entities.Empleado e : hotel.getEmpleados()) {
+            if (e.getDni() != null && e.getDni().equals(dni)) {
+                try {
+                    java.lang.reflect.Field f = e.getClass().getDeclaredField("estado");
+                    f.setAccessible(true);
+                    f.set(e, model.entities.EstadoEmpleado.fromString("ocupado"));
+                } catch (Exception ex) { /* ignore */ }
+                break;
+            }
+        }
+    }
+
+    /** Libera el empleado asignado a una habitación: marca al empleado como disponible y limpia la asignación. */
+    public void liberarEmpleadoPorHabitacion(int numero) throws java.sql.SQLException {
+        var habOpt = hotel.buscarHabitacionPorNumero(numero);
+        if (habOpt.isEmpty()) return;
+        var hab = habOpt.get();
+        String dni = hab.getEmpleadoAsignado();
+        if (dni == null || dni.isBlank()) return;
+
+        try (java.sql.Connection conn = bdd.ConexionSQLite.conectar()) {
+            dao.EmpleadoDAO.updateEstadoByDni(conn, dni, "disponible");
+            try {
+                dao.HabitacionDAO.updateEmpleadoAsignado(conn, numero, null);
+            } catch (Exception ex) { /* columna puede no existir */ }
+        }
+
+        // actualizar en memoria
+        hab.setEmpleadoAsignado(null);
+        for (model.entities.Empleado e : hotel.getEmpleados()) {
+            if (e.getDni() != null && e.getDni().equals(dni)) {
+                try {
+                    java.lang.reflect.Field f = e.getClass().getDeclaredField("estado");
+                    f.setAccessible(true);
+                    f.set(e, model.entities.EstadoEmpleado.fromString("disponible"));
+                } catch (Exception ex) { /* ignore */ }
+                break;
+            }
+        }
+    }
+
+
+    /**
+     * Devuelve true si el empleado está actualmente dentro de su turno de trabajo.
+     * Turnos soportados (basado en la cadena `turno` del empleado, insensible a mayúsculas y acentos):
+     * - Mañana: 06:00 - 13:59
+     * - Tarde: 14:00 - 21:59
+     * - Noche: 22:00 - 05:59
+     * Si el turno es nulo o no reconoce, retorna true (se considera disponible por turno).
+     */
+    public boolean estaEmpleadoEnTurno(model.entities.Empleado emp) {
+        if (emp == null) return false;
+        String turno = emp.getTurno();
+        if (turno == null) return true;
+        // Normalizar: quitar acentos y pasar a minúsculas
+        String t = java.text.Normalizer.normalize(turno, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "").toLowerCase();
+        java.time.LocalTime now = java.time.LocalTime.now();
+        java.time.LocalTime mañanaInicio = java.time.LocalTime.of(6,0);
+        java.time.LocalTime tardeInicio = java.time.LocalTime.of(14,0);
+        java.time.LocalTime nocheInicio = java.time.LocalTime.of(22,0);
+        // Mañana
+        if (t.contains("manana") || t.contains("ma") || t.contains("mañ" ) || t.contains("man")) {
+            return !now.isBefore(mañanaInicio) && now.isBefore(tardeInicio);
+        }
+        // Tarde
+        if (t.contains("tarde") || t.contains("tar")) {
+            return !now.isBefore(tardeInicio) && now.isBefore(nocheInicio);
+        }
+        // Noche
+        if (t.contains("noche") || t.contains("noc")) {
+            // noche cubre desde 22:00 hasta 06:00 (pasando medianoche)
+            if (!now.isBefore(nocheInicio)) return true; // >=22:00
+            return now.isBefore(mañanaInicio); // <06:00
+        }
+        // Si no reconoce el texto del turno, asumimos que está en turno
+        return true;
     }
 }

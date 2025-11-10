@@ -214,10 +214,8 @@ public class CheckInOutPanel extends JPanel {
                 new CheckIn(empleado, r);
                 JOptionPane.showMessageDialog(this, "Check-In realizado correctamente para la reserva #" + r.getIdReserva());
             } else {
-                // pedir confirmación y total consumido opcional
-                String s = JOptionPane.showInputDialog(this, "Total consumido (opcional, vacío = 0):");
+                // Check-Out: no solicitar total al usuario (usar 0.0 por defecto)
                 double total = 0.0;
-                try { if (s != null && !s.trim().isEmpty()) total = Double.parseDouble(s.trim()); } catch (NumberFormatException ex) { total = 0.0; }
                 new CheckOut(empleado, r, total);
                 JOptionPane.showMessageDialog(this, "Check-Out realizado correctamente para la reserva #" + r.getIdReserva());
             }
@@ -226,7 +224,7 @@ public class CheckInOutPanel extends JPanel {
             try {
                 controlador.guardarReservaEnDB(r);
                 // actualizar estado habitacion
-                controlador.actualizarEstadoHabitacionEnDB(r.getHabitacion().getNumero(), r.getHabitacion().getEstado());
+                controlador.actualizarEstadoHabitacionEnDB(r.getHabitacion().getNumero(), r.getHabitacion().getEstado().getDbValue());
             } catch (SQLException sqlEx) {
                 JOptionPane.showMessageDialog(this, "Error guardando cambios en BD: " + sqlEx.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
             }

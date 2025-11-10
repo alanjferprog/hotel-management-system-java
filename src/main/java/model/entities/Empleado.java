@@ -8,6 +8,7 @@ public class Empleado extends Persona {
     private String cargo;
     private String turno;
     private List<String> autorizaciones;
+    private EstadoEmpleado estado;
 
     public Empleado(int idEmpleado, String nombre, String apellido, String dni, String cargo, String turno) {
         super(nombre, apellido, dni);
@@ -15,6 +16,7 @@ public class Empleado extends Persona {
         this.cargo = cargo;
         this.turno = turno;
         this.autorizaciones = new ArrayList<>();
+        this.estado = EstadoEmpleado.DISPONIBLE;
     }
 
     public int getIdEmpleado() { return idEmpleado; }
@@ -23,8 +25,12 @@ public class Empleado extends Persona {
     public void agregarAutorizacion(String auth) { autorizaciones.add(auth); }
     public boolean estaAutorizado(String auth) { return autorizaciones.contains(auth); }
 
+    public EstadoEmpleado getEstado() { return estado; }
+    public void setEstado(EstadoEmpleado estado) { this.estado = estado; }
+    public void setEstado(String estadoStr) { this.estado = EstadoEmpleado.fromString(estadoStr); }
+
     @Override
     public String toString() {
-        return "Empleado #" + idEmpleado + " " + super.toString() + " - " + cargo + " - " + turno;
+        return "Empleado #" + idEmpleado + " " + super.toString() + " - " + cargo + " - " + turno + " (" + (estado == null ? "" : estado.getLabel()) + ")";
     }
 }

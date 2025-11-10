@@ -9,6 +9,7 @@ import dao.EmpleadoDAO;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.ResultSet;
 
 
 public class DatabaseInitializer {
@@ -59,6 +60,7 @@ public class DatabaseInitializer {
             """;
             stmt.execute(sqlCreateCli);
 
+            // 4) Crear tabla empleado con columna estado (default 'disponible')
             String sqlCreateEmp = """
                     CREATE TABLE IF NOT EXISTS empleado (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,12 +68,51 @@ public class DatabaseInitializer {
                     apellido TEXT,
                     dni TEXT,
                     cargo TEXT,
-                    turno TEXT
+                    turno TEXT,
+                    estado TEXT NOT NULL DEFAULT 'disponible'
                     );
             """;
             stmt.execute(sqlCreateEmp);
 
-            // 4) Insertar datos de ejemplo solo si la tabla está vacía
+            // Migración ligera: si la tabla empleado existe pero no tiene columna 'estado', agregarla
+            try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(empleado);")) {
+                boolean tieneEstado = false;
+                while (rs.next()) {
+                    String col = rs.getString("name");
+                    if (col != null && col.equalsIgnoreCase("estado")) { tieneEstado = true; break; }
+                }
+                if (!tieneEstado) {
+                    try (Statement s2 = conn.createStatement()) {
+                        s2.executeUpdate("ALTER TABLE empleado ADD COLUMN estado TEXT NOT NULL DEFAULT 'disponible';");
+                        System.out.println("Database migration: se agregó columna 'estado' a empleado");
+                    } catch (SQLException ex) {
+                        System.err.println("No se pudo agregar columna 'estado' a empleado: " + ex.getMessage());
+                    }
+                }
+            } catch (SQLException ignore) {
+                // si falla, no interrumpir la inicialización
+            }
+
+            // Migración ligera: si la tabla habitacion no tiene columna empleadoAsignado, agregarla
+            try (ResultSet rs2 = stmt.executeQuery("PRAGMA table_info(habitacion);")) {
+                boolean tieneEmpleadoAsignado = false;
+                while (rs2.next()) {
+                    String col = rs2.getString("name");
+                    if (col != null && col.equalsIgnoreCase("empleadoAsignado")) { tieneEmpleadoAsignado = true; break; }
+                }
+                if (!tieneEmpleadoAsignado) {
+                    try (Statement s3 = conn.createStatement()) {
+                        s3.executeUpdate("ALTER TABLE habitacion ADD COLUMN empleadoAsignado TEXT NULL;");
+                        System.out.println("Database migration: se agregó columna 'empleadoAsignado' a habitacion");
+                    } catch (SQLException ex) {
+                        System.err.println("No se pudo agregar columna 'empleadoAsignado' a habitacion: " + ex.getMessage());
+                    }
+                }
+            } catch (SQLException ignore) {
+                // ignorar
+            }
+
+            // 5) Insertar datos de ejemplo solo si la tabla está vacía
             try {
                 if (tableIsEmpty(conn, "habitacion")) {
                     HabitacionDAO.insertSampleData(conn);

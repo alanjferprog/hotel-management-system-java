@@ -48,8 +48,8 @@ public class Reserva {
     public Empleado getEmpleadoResponsable() { return empleadoResponsable; }
     public String getEstado() { return estado; }
 
-    public void confirmar() { this.estado = "confirmada"; habitacion.setEstado("ocupada"); }
-    public void cancelar() { this.estado = "cancelada"; habitacion.setEstado("disponible"); }
+    public void confirmar() { this.estado = "confirmada"; habitacion.setEstado(EstadoHabitacion.OCUPADA); }
+    public void cancelar() { this.estado = "cancelada"; /* ya no tocamos el estado de la habitación aquí */ }
 
     public long calcularImporteTotal() {
         long noches = ChronoUnit.DAYS.between(fechaInicio, fechaFin);

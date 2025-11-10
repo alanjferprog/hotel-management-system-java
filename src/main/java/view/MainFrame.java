@@ -1,5 +1,8 @@
 package view;
 
+import model.entities.EstadoHabitacion;
+import model.entities.Empleado;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -30,6 +33,15 @@ public class MainFrame extends JFrame {
             // Cargar reservas asociadas desde DB
             int rc = controlador.cargarReservasDesdeDB();
             System.out.println("Reservas cargadas desde DB (MainFrame): " + rc);
+            // Cargar empleados desde DB y poblar en memoria
+            try {
+                java.util.List<model.entities.Empleado> empleados = controlador.cargarEmpleadoDesdeBD();
+                controlador.getHotel().getEmpleados().clear();
+                for (model.entities.Empleado emp : empleados) controlador.getHotel().getEmpleados().add(emp);
+                System.out.println("Empleados cargados desde BD (MainFrame): " + empleados.size());
+            } catch (Exception exEmp) {
+                System.err.println("No se pudieron cargar empleados desde BD en MainFrame: " + exEmp.getMessage());
+            }
         } catch (Exception ex) {
             System.err.println("No se pudieron cargar datos desde DB en MainFrame: " + ex.getMessage());
             // fallback: se puede poblar manualmente desde Main si es necesario
@@ -120,6 +132,58 @@ public class MainFrame extends JFrame {
         verPanel.setOnReservar(numero -> {
             reservarPanel.setNumeroHabitacion(numero);
             cardLayout.show(contentPanel, "RESERVAR");
+        });
+
+        // Nuevo: manejar pedir limpieza desde la lista de habitaciones
+        verPanel.setOnPedirLimpieza(numero -> {
+            try {
+                // Selección de empleado para asignar a limpieza (solo personal de limpieza)
+                java.util.List<Empleado> empleadosAll = controlador.getHotel().getEmpleados();
+                java.util.List<Empleado> limpieza = new java.util.ArrayList<>();
+                for (Empleado emp : empleadosAll) {
+                    if (emp.getCargo() != null && emp.getCargo().toLowerCase().contains("limpieza") && controlador.estaEmpleadoEnTurno(emp)) limpieza.add(emp);
+                }
+                String[] opciones;
+                if (limpieza.isEmpty()) {
+                    opciones = new String[] { "No asignar" };
+                } else {
+                    opciones = new String[limpieza.size() + 1];
+                    opciones[0] = "No asignar";
+                    for (int i = 0; i < limpieza.size(); i++) {
+                        opciones[i+1] = limpieza.get(i).getNombre() + " " + limpieza.get(i).getApellido();
+                    }
+                }
+                String elegido = (String) JOptionPane.showInputDialog(this, "Asignar limpieza a:", "Asignar empleado de limpieza", JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[0]);
+
+                // cambiar estado en memoria a 'limpieza_pedida' para indicar que ya se solicitó
+                controlador.getHotel().buscarHabitacionPorNumero(numero).ifPresent(h -> h.setEstado(EstadoHabitacion.LIMPIEZA_PEDIDA));
+                // persistir cambio en BD
+                controlador.actualizarEstadoHabitacionEnDB(numero, EstadoHabitacion.LIMPIEZA_PEDIDA.getDbValue());
+
+                // si se seleccionó un empleado válido, marcarlo como ocupado y persistir
+                if (elegido != null && !"No asignar".equals(elegido) && !limpieza.isEmpty()) {
+                    int idx = java.util.Arrays.asList(opciones).indexOf(elegido) - 1; // porque opciones[0] = No asignar
+                    if (idx >= 0 && idx < limpieza.size()) {
+                        Empleado emp = limpieza.get(idx);
+                        try {
+                            controlador.asignarEmpleadoAHabitacion(numero, emp.getDni());
+                            if (empleadoPanel != null) empleadoPanel.refresh();
+                        } catch (java.sql.SQLException ex) {
+                            JOptionPane.showMessageDialog(this, "No se pudo asignar el empleado a la habitación: " + ex.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+
+                // refrescar paneles
+                verPanel.refresh();
+                checkinout.refresh();
+
+                String msg = "Solicitud de limpieza enviada para la habitación " + numero;
+                if (elegido != null && !"No asignar".equals(elegido)) msg += " (asignada a: " + elegido + ")";
+                JOptionPane.showMessageDialog(this, msg, "Limpieza solicitada", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "No se pudo solicitar la limpieza: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         // Botón Volver dentro del ReservarPanel vuelve a INICIO (ajustable)

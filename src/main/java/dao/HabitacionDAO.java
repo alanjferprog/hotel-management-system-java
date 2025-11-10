@@ -13,7 +13,7 @@ public class HabitacionDAO {
 
     public static List<Habitacion> findAll(Connection conn) throws SQLException {
         List<Habitacion> list = new ArrayList<>();
-        String sql = "SELECT numero, tipo, precioPorNoche, estado FROM habitacion ORDER BY numero";
+        String sql = "SELECT numero, tipo, precioPorNoche, estado, empleadoAsignado FROM habitacion ORDER BY numero";
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -21,8 +21,11 @@ public class HabitacionDAO {
                 String tipo = rs.getString("tipo");
                 double precio = rs.getDouble("precioPorNoche");
                 String estado = rs.getString("estado");
+                String empleado = null;
+                try { empleado = rs.getString("empleadoAsignado"); } catch (SQLException ex) { /* columna puede no existir en versiones antiguas */ }
                 Habitacion h = new Habitacion(numero, tipo, precio);
                 h.setEstado(estado);
+                if (empleado != null) h.setEmpleadoAsignado(empleado);
                 list.add(h);
             }
         }
@@ -77,4 +80,21 @@ public class HabitacionDAO {
             ps.executeUpdate();
         }
     }
+
+    // Nuevo: actualizar el empleado asignado para una habitacion
+    public static void updateEmpleadoAsignado(Connection conn, int numero, String dniEmpleado) throws SQLException {
+        // Intentar actualizar columna empleadoAsignado; si no existe, ignorar
+        try {
+            String sql = "UPDATE habitacion SET empleadoAsignado = ? WHERE numero = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, dniEmpleado);
+                ps.setInt(2, numero);
+                ps.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            // si la columna no existe, no hacemos nada (se puede migrar la DB si hace falta)
+            System.err.println("No se pudo actualizar empleadoAsignado (columna ausente): " + ex.getMessage());
+        }
+    }
+
 }

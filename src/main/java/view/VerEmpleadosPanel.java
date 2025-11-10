@@ -23,7 +23,7 @@ public class VerEmpleadosPanel extends JPanel {
         setLayout(new BorderLayout());
 
         // Mantener la columna Id en el modelo (para operaciones internas) pero ocultarla en la vista
-        modelo = new DefaultTableModel(new Object[]{"Id","Nombre","Apellido","DNI","Cargo","Turno"}, 0) {
+        modelo = new DefaultTableModel(new Object[]{"Id","Nombre","Apellido","DNI","Cargo","Turno","Estado","En turno"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -70,7 +70,8 @@ public class VerEmpleadosPanel extends JPanel {
             try {
                 List<Empleado> empleados = controlador.cargarEmpleadoDesdeBD();
                 for (Empleado e : empleados) {
-                    modelo.addRow(new Object[]{e.getIdEmpleado(), e.getNombre(), e.getApellido(), e.getDni(), e.getCargo(), e.getTurno()});
+                    boolean enTurno = controlador.estaEmpleadoEnTurno(e);
+                    modelo.addRow(new Object[]{e.getIdEmpleado(), e.getNombre(), e.getApellido(), e.getDni(), e.getCargo(), e.getTurno(), e.getEstado() == null ? "" : e.getEstado().getLabel(), enTurno ? "Sí" : "No"});
                 }
                 return;
             } catch (Exception ex) {
