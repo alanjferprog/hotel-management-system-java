@@ -18,6 +18,22 @@ public class RoomService {
     public String getDescripcion() { return descripcion; }
     public double getCosto() { return costo; }
 
+    public void setIdService(int idService) {
+        this.idService = idService;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public void setCosto(double costo) {
+        this.costo = costo;
+    }
+
     @Override
     public String toString() {
         return "RoomService #" + idService + " " + tipo + " $" + costo;

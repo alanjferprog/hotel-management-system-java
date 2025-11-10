@@ -29,7 +29,21 @@ public class Empleado extends Persona {
     public void setEstado(EstadoEmpleado estado) { this.estado = estado; }
     public void setEstado(String estadoStr) { this.estado = EstadoEmpleado.fromString(estadoStr); }
 
+    public void setIdEmpleado(int idEmpleado) {
+        this.idEmpleado = idEmpleado;
+    }
 
+    public void setCargo(String cargo) {
+        this.cargo = cargo;
+    }
+
+    public void setTurno(String turno) {
+        this.turno = turno;
+    }
+
+    public void setAutorizaciones(List<String> autorizaciones) {
+        this.autorizaciones = autorizaciones;
+    }
 
     @Override
     public String toString() {

@@ -57,6 +57,34 @@ public class Reserva {
         return Math.round(noches * habitacion.getPrecioPorNoche());
     }
 
+    public void setIdReserva(int idReserva) {
+        this.idReserva = idReserva;
+    }
+
+    public void setFechaInicio(LocalDate fechaInicio) {
+        this.fechaInicio = fechaInicio;
+    }
+
+    public void setFechaFin(LocalDate fechaFin) {
+        this.fechaFin = fechaFin;
+    }
+
+    public void setHabitacion(Habitacion habitacion) {
+        this.habitacion = habitacion;
+    }
+
+    public void setHuesped(Huesped huesped) {
+        this.huesped = huesped;
+    }
+
+    public void setEmpleadoResponsable(Empleado empleadoResponsable) {
+        this.empleadoResponsable = empleadoResponsable;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
     @Override
     public String toString() {
         return "Reserva #" + idReserva + " - " + huesped + " / Hab: " + habitacion.getNumero()

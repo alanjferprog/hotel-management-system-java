@@ -28,6 +28,18 @@ public class Habitacion {
 
     public void setEmpleadoAsignado(String dni) { this.empleadoAsignado = dni; }
 
+    public void setNumero(int numero) {
+        this.numero = numero;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public void setPrecioPorNoche(double precioPorNoche) {
+        this.precioPorNoche = precioPorNoche;
+    }
+
     public boolean estaDisponible() {
         return EstadoHabitacion.DISPONIBLE.equals(this.estado);
     }
