@@ -75,8 +75,15 @@ public class ControladorGUI {
 
                     // Buscar habitacion en memoria (debe estar cargada previamente)
                     java.util.Optional<Habitacion> habOpt = hotel.buscarHabitacionPorNumero(numeroHab);
-                    if (!habOpt.isPresent()) continue; // ignorar si no existe
-                    Habitacion hab = habOpt.get();
+                    model.entities.Habitacion hab;
+                    if (!habOpt.isPresent()) {
+                        // Si la habitación no existe en memoria, crear una provisional para poder mostrar la reserva
+                        hab = new model.entities.Habitacion(numeroHab, "Desconocida", 0.0);
+                        // No persistimos automáticamente la habitación; la dejamos en memoria para mostrar la fila
+                        hotel.agregarHabitacion(hab);
+                    } else {
+                        hab = habOpt.get();
+                    }
 
                     Huesped h = new Huesped(nombre == null ? "" : nombre, apellido == null ? "" : apellido, dni == null ? "" : dni, email == null ? "" : email, telefono == null ? "" : telefono);
                     Reserva r = new Reserva(id, inicio, fin, hab, h, new Empleado(1, "DB", "Init", "00000000", "System", "All Day"));

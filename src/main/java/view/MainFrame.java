@@ -56,6 +56,7 @@ public class MainFrame extends JFrame {
         // Panels (instancias)
         empleadoPanel = new VerEmpleadosPanel(controlador);
         reservarPanel = new ReservarPanel(controlador);
+        VerReservasPanel verReservasPanel = new VerReservasPanel(controlador);
         verPanel = new VerHabitacionesPanel(controlador);
         checkinout = new CheckInOutPanel(controlador);
 
@@ -114,6 +115,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(inicioPanel, "INICIO");
         contentPanel.add(reservarPanel, "RESERVAR");
         contentPanel.add(verPanel, "VER");
+        contentPanel.add(verReservasPanel, "RESERVAS");
         // Registrar el panel de empleados en el CardLayout
         contentPanel.add(empleadoPanel, "EMPLEADOS");
         // agregar panel de huéspedes
@@ -204,31 +206,8 @@ public class MainFrame extends JFrame {
         });
 
         btnVerReserva.addActionListener(e -> {
-            // Dialogo rápido para buscar por ID usando ReservaController (MVC)
-            String input = JOptionPane.showInputDialog(this, "Ingrese el ID de la reserva:");
-            if (input == null) return; // cancel
-            input = input.trim();
-            if (input.isEmpty()) { JOptionPane.showMessageDialog(this, "ID vacío", "Info", JOptionPane.INFORMATION_MESSAGE); return; }
-            try {
-                int id = Integer.parseInt(input);
-                ReservaController rc = new ReservaController();
-                var optRow = rc.findReservationRowById(id, controlador);
-                if (optRow.isPresent()) {
-                    Object[] row = optRow.get();
-                    // Mostrar en una tabla simple
-                    javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(new Object[]{"ID","Huésped","Hab","Inicio","Fin","Estado"}, 0) {
-                        @Override public boolean isCellEditable(int r, int c) { return false; }
-                    };
-                    model.addRow(row);
-                    JTable t = new JTable(model);
-                    t.removeColumn(t.getColumnModel().getColumn(0)); // ocultar id visualmente
-                    JOptionPane.showMessageDialog(this, new JScrollPane(t), "Reserva encontrada", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "Reserva no encontrada: " + id, "Info", JOptionPane.INFORMATION_MESSAGE);
-                }
-            } catch (NumberFormatException nfe) {
-                JOptionPane.showMessageDialog(this, "ID inválido", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            cardLayout.show(contentPanel, "RESERVAS");
+            verReservasPanel.refresh();
         });
 
         btnCheckInOut.addActionListener(e -> {

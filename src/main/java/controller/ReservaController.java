@@ -31,37 +31,61 @@ public class ReservaController {
 
     /**
      * Retorna una lista de filas (Object[]) para poblar la tabla con reservas.
+     * Ahora priorizamos la BD como fuente de verdad: si la consulta a la BD funciona, devolvemos esas filas.
+     * Si falla, usamos la memoria solo como fallback. Además procesamos fila a fila para evitar que
+     * una fila con datos corruptos (fecha inválida) haga fallar toda la lectura.
      */
     public List<Object[]> getReservationRows(ControladorGUI controlador) {
         List<Object[]> rows = new ArrayList<>();
-        try {
-            if (!controlador.getHotel().getReservas().isEmpty()) {
-                for (Reserva r : controlador.getHotel().getReservas()) {
-                    rows.add(new Object[]{r.getIdReserva(), r.getHuesped().getNombre() + " " + r.getHuesped().getApellido(), r.getHabitacion().getNumero(), r.getFechaInicio(), r.getFechaFin(), r.getEstado()});
-                }
-                return rows;
-            }
-        } catch (Exception ex) {
-            // seguir a fallback
-        }
 
-        // Fallback: leer directamente desde la BD
+        // Intentar leer desde BD primero (fuente de verdad)
         try (Connection conn = ConexionSQLite.conectar()) {
             String sql = "SELECT id, nombre, apellido, numeroHab, fechaInicio, fechaFin, estado FROM reserva ORDER BY id";
             try (PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    int id = rs.getInt("id");
-                    java.time.LocalDate inicio = java.time.LocalDate.parse(rs.getString("fechaInicio"));
-                    java.time.LocalDate fin = java.time.LocalDate.parse(rs.getString("fechaFin"));
-                    int numeroHab = rs.getInt("numeroHab");
-                    String nombre = rs.getString("nombre");
-                    String apellido = rs.getString("apellido");
-                    String estado = rs.getString("estado");
-                    rows.add(new Object[]{id, (nombre==null?"":nombre) + " " + (apellido==null?"":apellido), numeroHab, inicio, fin, estado});
+                    try {
+                        int id = rs.getInt("id");
+                        String inicioS = rs.getString("fechaInicio");
+                        String finS = rs.getString("fechaFin");
+                        java.time.LocalDate inicio = null;
+                        java.time.LocalDate fin = null;
+                        try {
+                            if (inicioS != null && !inicioS.isBlank()) inicio = java.time.LocalDate.parse(inicioS);
+                        } catch (Exception pe) {
+                            System.err.println("Fila reserva id="+id+": fechaInicio inválida ('"+inicioS+"'), se omitirá la fecha: " + pe.getMessage());
+                        }
+                        try {
+                            if (finS != null && !finS.isBlank()) fin = java.time.LocalDate.parse(finS);
+                        } catch (Exception pe) {
+                            System.err.println("Fila reserva id="+id+": fechaFin inválida ('"+finS+"'), se omitirá la fecha: " + pe.getMessage());
+                        }
+                        int numeroHab = rs.getInt("numeroHab");
+                        String nombre = rs.getString("nombre");
+                        String apellido = rs.getString("apellido");
+                        String estado = rs.getString("estado");
+                        rows.add(new Object[]{id, (nombre==null?"":nombre) + " " + (apellido==null?"":apellido), numeroHab, inicio, fin, estado});
+                    } catch (Exception rowEx) {
+                        // Si falla una fila concreta, continuar con la siguiente
+                        System.err.println("Error procesando fila de reserva desde BD: " + rowEx.getMessage());
+                    }
+                }
+            }
+            if (!rows.isEmpty()) return rows;
+        } catch (Exception ex) {
+            // si la BD falla, seguiremos al fallback (memoria)
+            System.err.println("No se pudo leer reservas desde BD: " + ex.getMessage());
+        }
+
+        // Fallback: usar las reservas en memoria
+        try {
+            if (controlador.getHotel().getReservas() != null && !controlador.getHotel().getReservas().isEmpty()) {
+                for (Reserva r : controlador.getHotel().getReservas()) {
+                    rows.add(new Object[]{r.getIdReserva(), r.getHuesped().getNombre() + " " + r.getHuesped().getApellido(), r.getHabitacion().getNumero(), r.getFechaInicio(), r.getFechaFin(), r.getEstado()});
                 }
             }
         } catch (Exception ex) {
-            // si falla, retornar lista posiblemente vacía
+            // si todo falla, retornamos lista vacía
+            System.err.println("No se pudo obtener reservas desde memoria: " + ex.getMessage());
         }
         return rows;
     }
@@ -85,8 +109,13 @@ public class ReservaController {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         int rid = rs.getInt("id");
-                        java.time.LocalDate inicio = java.time.LocalDate.parse(rs.getString("fechaInicio"));
-                        java.time.LocalDate fin = java.time.LocalDate.parse(rs.getString("fechaFin"));
+                        String inicioS = rs.getString("fechaInicio");
+                        String finS = rs.getString("fechaFin");
+                        java.time.LocalDate inicio = null;
+                        java.time.LocalDate fin = null;
+                        try { if (inicioS != null && !inicioS.isBlank()) inicio = java.time.LocalDate.parse(inicioS); } catch (Exception pe) { /* ignore */ }
+                        try { if (finS != null && !finS.isBlank()) fin = java.time.LocalDate.parse(finS); } catch (Exception pe) { /* ignore */ }
+
                         int numeroHab = rs.getInt("numeroHab");
                         String nombre = rs.getString("nombre");
                         String apellido = rs.getString("apellido");
@@ -103,11 +132,13 @@ public class ReservaController {
                         model.entities.Empleado emp = controlador.getHotel().getEmpleados().isEmpty() ? new model.entities.Empleado(0, "DB", "Init", "00000000", "System", "All Day") : controlador.getHotel().getEmpleados().get(0);
                         Reserva r = new Reserva(rid, inicio, fin, hab, hues, emp);
                         // intentar setear estado si existe
-                        try {
-                            java.lang.reflect.Field f = Reserva.class.getDeclaredField("estado");
-                            f.setAccessible(true);
-                            f.set(r, estado);
-                        } catch (Exception ignore) {}
+                        if (estado != null) {
+                            try {
+                                java.lang.reflect.Field f = Reserva.class.getDeclaredField("estado");
+                                f.setAccessible(true);
+                                f.set(r, estado);
+                            } catch (Exception ignore) {}
+                        }
                         return Optional.of(r);
                     }
                 }
