@@ -26,4 +26,20 @@ public class CheckOut {
     public Empleado getEmpleado() { return empleado; }
     public Reserva getReserva() { return reserva; }
     public double getTotalConsumido() { return totalConsumido; }
+
+    public void setFechaHora(LocalDateTime fechaHora) {
+        this.fechaHora = fechaHora;
+    }
+
+    public void setEmpleado(Empleado empleado) {
+        this.empleado = empleado;
+    }
+
+    public void setReserva(Reserva reserva) {
+        this.reserva = reserva;
+    }
+
+    public void setTotalConsumido(double totalConsumido) {
+        this.totalConsumido = totalConsumido;
+    }
 }

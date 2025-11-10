@@ -29,6 +29,8 @@ public class Empleado extends Persona {
     public void setEstado(EstadoEmpleado estado) { this.estado = estado; }
     public void setEstado(String estadoStr) { this.estado = EstadoEmpleado.fromString(estadoStr); }
 
+
+
     @Override
     public String toString() {
         return "Empleado #" + idEmpleado + " " + super.toString() + " - " + cargo + " - " + turno + " (" + (estado == null ? "" : estado.getLabel()) + ")";

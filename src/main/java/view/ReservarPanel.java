@@ -10,7 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.LocalDate;
-import java.sql.SQLException; // añadido
+import java.sql.SQLException;
 import controller.ReservaController;
 import controller.HabitacionController;
 import controller.HotelController;
@@ -18,8 +18,7 @@ import controller.HotelController;
 public class ReservarPanel extends JPanel {
     private HotelController controlador;
     private JTextField tfNombre, tfApellido, tfDni, tfEmail, tfTelefono, tfNumeroHab;
-    // Usamos DatePicker (LGoodDatePicker)
-    private DatePicker dpInicio, dpFin;
+    private DatePicker dpInicio, dpFin; //Para fechas
     private JButton btnReservar;
     private JButton btnVolver;
     private Runnable onBackCallback;
